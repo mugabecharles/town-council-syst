@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+*.log
+logs/
+uploads/documents/
+uploads/receipts/
+uploads/vouchers/
+uploads/reports/
+.vscode/
+.idea/
+README.md

@@ -1,0 +1,45 @@
+services:
+  # ── PHP Web Application ─────────────────────────────────────────
+  - type: web
+    name: town-council-syst
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /index.php
+
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_URL
+        fromService:
+          type: web
+          name: town-council-syst
+          property: host
+      - key: DB_HOST
+        fromDatabase:
+          name: tcms-mysql
+          property: host
+      - key: DB_NAME
+        fromDatabase:
+          name: tcms-mysql
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: tcms-mysql
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: tcms-mysql
+          property: password
+      - key: SESSION_TIMEOUT
+        value: "1800"
+      - key: COUNCIL_NAME
+        value: "Kira Town Council"
+
+  # ── MySQL Database ──────────────────────────────────────────────
+databases:
+  - name: tcms-mysql
+    databaseName: tcms_db
+    plan: free

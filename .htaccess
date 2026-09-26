@@ -1,0 +1,46 @@
+# TCMS - Apache Configuration
+Options -Indexes
+ServerSignature Off
+
+# PHP settings
+php_flag display_errors Off
+php_flag log_errors On
+php_value session.cookie_httponly 1
+php_value session.use_only_cookies 1
+php_value session.cookie_samesite "Strict"
+
+# Protect sensitive directories
+<FilesMatch "\.(sql|log|env|bak|config)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Protect uploads from PHP execution
+<Directory "uploads">
+    php_flag engine off
+    <FilesMatch "\.php$">
+        Order Allow,Deny
+        Deny from all
+    </FilesMatch>
+</Directory>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always unset X-Powered-By
+</IfModule>
+
+# Prevent access to hidden files
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Friendly URL rewriting (optional)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /Town%20Council%20syst/
+</IfModule>

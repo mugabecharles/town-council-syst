@@ -1,0 +1,42 @@
+# ── Environment & Secrets ────────────────────────────────────────
+.env
+.env.*
+!.env.example
+config/database.php
+
+# ── Uploads (user files — never commit) ──────────────────────────
+uploads/documents/
+uploads/receipts/
+uploads/vouchers/
+uploads/reports/
+uploads/**/*.pdf
+uploads/**/*.jpg
+uploads/**/*.jpeg
+uploads/**/*.png
+uploads/**/*.docx
+uploads/**/*.xlsx
+
+# ── Logs ─────────────────────────────────────────────────────────
+*.log
+logs/
+error_log
+
+# ── OS / Editor ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Composer (if added later) ────────────────────────────────────
+vendor/
+composer.lock
+
+# ── Node (if added later) ────────────────────────────────────────
+node_modules/
+npm-debug.log
+
+# ── Setup file (security — must not be deployed with key active) ─
+# setup.php is kept but should be deleted after first deploy run
