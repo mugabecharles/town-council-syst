@@ -97,7 +97,7 @@ function hasPermission(string $module, string $action): bool {
     return (int)$stmt->fetchColumn() > 0;
 }
 
-function hasRole(string|array $roles): bool {
+function hasRole($roles): bool {
     $user = getCurrentUser();
     if (!$user) return false;
     $roles = is_array($roles) ? $roles : [$roles];
