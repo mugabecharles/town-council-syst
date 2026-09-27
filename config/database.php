@@ -87,12 +87,11 @@ function getDB(): PDO {
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ];
 
-            // Aiven and other managed MySQL providers require SSL
+            // Aiven and managed MySQL require SSL — no cert verification needed
+            // (they use a trusted CA; we skip local CA file verification)
             if ($ssl) {
                 $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-                $options[PDO::MYSQL_ATTR_SSL_CA]                 = '';
-                // Enable SSL without verifying cert (Aiven uses trusted CA)
-                $dsn .= ';sslmode=require';
+                $options[PDO::MYSQL_ATTR_INIT_COMMAND]           = "SET NAMES utf8mb4";
             }
 
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
