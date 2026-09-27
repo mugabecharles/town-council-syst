@@ -2,7 +2,7 @@
 .env
 .env.*
 !.env.example
-config/database.php
+# config/database.php is tracked (uses ENV vars, no hardcoded secrets)
 
 # ── Uploads (user files — never commit) ──────────────────────────
 uploads/documents/
