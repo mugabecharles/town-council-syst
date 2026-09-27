@@ -38,15 +38,23 @@ defined('CURRENCY_SYMBOL')|| define('CURRENCY_SYMBOL', 'UGX');
 defined('APP_VERSION')    || define('APP_VERSION',     '1.0.0');
 defined('APP_ENV')        || define('APP_ENV',         env('APP_ENV', 'development'));
 
-// Derive APP_URL: honour explicit env var, else auto-detect
+// Derive APP_URL: honour explicit env var, else auto-detect from request
 if (!defined('APP_URL')) {
     if (env('APP_URL')) {
         define('APP_URL', rtrim(env('APP_URL'), '/'));
-    } else {
+    } elseif (!empty($_SERVER['HTTP_HOST'])) {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $base   = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-        define('APP_URL', "$scheme://$host$base");
+        // On Render/cloud: app is at root. Locally: may be in a subdirectory.
+        $host   = $_SERVER['HTTP_HOST'];
+        $script = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+        // If running from webroot (Render), base is empty
+        $parts  = explode('/', trim($script, '/'));
+        // Remove filename — keep only directory parts
+        array_pop($parts);
+        $base = !empty($parts) ? '/' . implode('/', $parts) : '';
+        define('APP_URL', $scheme . '://' . $host . $base);
+    } else {
+        define('APP_URL', 'http://localhost');
     }
 }
 
