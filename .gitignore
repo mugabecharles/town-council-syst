@@ -40,3 +40,5 @@ npm-debug.log
 
 # ── Setup file (security — must not be deployed with key active) ─
 # setup.php is kept but should be deleted after first deploy run
+
+.vercel
