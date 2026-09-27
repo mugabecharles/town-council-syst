@@ -6,16 +6,14 @@ echo " TCMS - Town Council Management System"
 echo " Starting up..."
 echo "=========================================="
 
-# ── Render assigns $PORT dynamically (usually 10000) ──────────────
+# ── Configure Apache port (Render assigns $PORT dynamically) ───────
 LISTEN_PORT="${PORT:-10000}"
-echo "Configuring Apache to listen on port $LISTEN_PORT ..."
+echo "Apache port: $LISTEN_PORT"
 
-# Update Apache ports.conf to use dynamic PORT
 cat > /etc/apache2/ports.conf <<EOF
 Listen ${LISTEN_PORT}
 EOF
 
-# Update VirtualHost to use dynamic PORT
 cat > /etc/apache2/sites-available/000-default.conf <<EOF
 <VirtualHost *:${LISTEN_PORT}>
     DocumentRoot /var/www/html
@@ -27,7 +25,7 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOF
         Require all granted
     </Directory>
 
-    <FilesMatch "\.(sql|env|log|bak)$">
+    <FilesMatch "\.(sql|env|log|bak|sh|yaml|yml)$">
         Require all denied
     </FilesMatch>
 
@@ -36,85 +34,87 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOF
 </VirtualHost>
 EOF
 
-echo "Apache configured for port $LISTEN_PORT"
+echo "Apache configured on port $LISTEN_PORT"
 
-# ── SSL flag ──────────────────────────────────────────────────────
-SSL_FLAG=""
-if [ "$DB_SSL" = "true" ]; then
-  SSL_FLAG="true"
-  echo "SSL mode: enabled (Aiven/managed database)"
-fi
-
-DB_PORT_VAL="${DB_PORT:-3306}"
-
-# ── Wait for MySQL ─────────────────────────────────────────────────
-if [ -n "$DB_HOST" ] && [ -n "$DB_USER" ]; then
-  echo "Waiting for MySQL at $DB_HOST:$DB_PORT_VAL ..."
-  MAX_TRIES=20
-  COUNT=0
-  until php -r "
-    try {
-      \$ssl  = '${SSL_FLAG}' === 'true';
-      \$opts = [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
-      if (\$ssl) \$opts[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-      new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$opts);
-      echo 'ok';
-    } catch(Exception \$e) { exit(1); }
-  " 2>/dev/null; do
-    COUNT=$((COUNT+1))
-    if [ $COUNT -ge $MAX_TRIES ]; then
-      echo "WARNING: MySQL not reachable after $MAX_TRIES tries — starting anyway."
-      break
-    fi
-    echo "  Attempt $COUNT/$MAX_TRIES — retrying in 3s..."
-    sleep 3
-  done
-  echo "MySQL check done."
-fi
-
-# ── Auto-install schema on first boot ─────────────────────────────
-if [ -n "$DB_HOST" ] && [ -n "$DB_USER" ]; then
-  TABLE_EXISTS=$(php -r "
-    try {
-      \$ssl  = '${SSL_FLAG}' === 'true';
-      \$opts = [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
-      if (\$ssl) \$opts[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-      \$pdo = new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};dbname=${DB_NAME};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$opts);
-      \$r = \$pdo->query(\"SHOW TABLES LIKE 'users'\");
-      echo \$r->rowCount() > 0 ? 'yes' : 'no';
-    } catch(Exception \$e) { echo 'no'; }
-  " 2>/dev/null)
-
-  if [ "$TABLE_EXISTS" = "no" ]; then
-    echo "Running database schema setup..."
-    php -r "
-      try {
-        \$ssl  = '${SSL_FLAG}' === 'true';
-        \$opts = [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
-        if (\$ssl) \$opts[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-        \$pdo = new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$opts);
-        try { \$pdo->exec('CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); } catch(Exception \$e) {}
-        \$pdo->exec('USE \`${DB_NAME}\`');
-        \$sql = file_get_contents('/var/www/html/config/tcms_schema.sql');
-        \$ok = 0;
-        foreach (array_filter(array_map('trim', explode(';', \$sql))) as \$s) {
-          try { \$pdo->exec(\$s); \$ok++; } catch(Exception \$e) {}
-        }
-        echo \"Schema done: \$ok statements.\n\";
-      } catch(Exception \$e) { echo 'Schema error: '.\$e->getMessage().\"\\n\"; }
-    "
-    echo ""
-    echo "=== Default login: admin / Admin@2026 ==="
-  else
-    echo "Schema already installed — skipping."
-  fi
-fi
-
-# ── Auto-set APP_URL from Render external URL ──────────────────────
+# ── Set APP_URL from Render external URL ───────────────────────────
 if [ -n "$RENDER_EXTERNAL_URL" ] && [ -z "$APP_URL" ]; then
-  export APP_URL="$RENDER_EXTERNAL_URL"
-  echo "APP_URL set to: $APP_URL"
+    export APP_URL="$RENDER_EXTERNAL_URL"
+    echo "APP_URL: $APP_URL"
 fi
 
-echo "Starting Apache on port $LISTEN_PORT ..."
+# ── Run DB schema setup in background (non-blocking) ───────────────
+# This runs AFTER Apache starts so the health check passes immediately
+(
+    echo "[DB] Waiting 15s for Apache to start before DB setup..."
+    sleep 15
+
+    SSL_FLAG=""
+    [ "$DB_SSL" = "true" ] && SSL_FLAG="true"
+    DB_PORT_VAL="${DB_PORT:-3306}"
+
+    if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ]; then
+        echo "[DB] No DB credentials — skipping schema setup."
+        exit 0
+    fi
+
+    # Wait for MySQL with retries
+    echo "[DB] Connecting to $DB_HOST:$DB_PORT_VAL ..."
+    for i in $(seq 1 20); do
+        CONNECTED=$(php -r "
+            try {
+                \$o=[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
+                if('${SSL_FLAG}'==='true') \$o[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]=false;
+                new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$o);
+                echo 'yes';
+            } catch(Exception \$e){ echo 'no'; }
+        " 2>/dev/null)
+        if [ "$CONNECTED" = "yes" ]; then
+            echo "[DB] Connected."
+            break
+        fi
+        echo "[DB] Attempt $i/20 failed — retry in 5s..."
+        sleep 5
+    done
+
+    if [ "$CONNECTED" != "yes" ]; then
+        echo "[DB] Could not connect to MySQL. Schema setup skipped."
+        exit 0
+    fi
+
+    # Check if schema already installed
+    TABLE_EXISTS=$(php -r "
+        try {
+            \$o=[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
+            if('${SSL_FLAG}'==='true') \$o[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]=false;
+            \$p=new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};dbname=${DB_NAME};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$o);
+            \$r=\$p->query(\"SHOW TABLES LIKE 'users'\");
+            echo \$r->rowCount()>0?'yes':'no';
+        } catch(Exception \$e){ echo 'no'; }
+    " 2>/dev/null)
+
+    if [ "$TABLE_EXISTS" = "yes" ]; then
+        echo "[DB] Schema already installed — skipping."
+        exit 0
+    fi
+
+    echo "[DB] Installing schema..."
+    php -r "
+        try {
+            \$o=[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
+            if('${SSL_FLAG}'==='true') \$o[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]=false;
+            \$p=new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$o);
+            try { \$p->exec('CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); } catch(Exception \$e){}
+            \$p->exec('USE \`${DB_NAME}\`');
+            \$sql=file_get_contents('/var/www/html/config/tcms_schema.sql');
+            \$n=0;
+            foreach(array_filter(array_map('trim',explode(';',\$sql))) as \$s){
+                try { \$p->exec(\$s); \$n++; } catch(Exception \$e){}
+            }
+            echo \"[DB] Schema installed: \$n statements OK.\n\";
+        } catch(Exception \$e){ echo '[DB] Error: '.\$e->getMessage().\"\n\"; }
+    "
+    echo "[DB] Default login: admin / Admin@2026"
+) &
+
+echo "Starting Apache..."
 exec "$@"

@@ -1,5 +1,4 @@
 services:
-  # ── PHP Web Application (Docker) ───────────────────────────────────
   - type: web
     name: town-council-syst
     runtime: docker
@@ -7,13 +6,11 @@ services:
     plan: free
     branch: main
     autoDeploy: true
-    healthCheckPath: /index.php
+    healthCheckPath: /health.php
 
     envVars:
       - key: APP_ENV
         value: production
-      - key: APP_URL
-        sync: false          # set manually in dashboard to your Render URL
       - key: COUNCIL_NAME
         value: "Kira Town Council"
       - key: SESSION_TIMEOUT
@@ -22,5 +19,3 @@ services:
         value: "true"
       - key: DB_PORT
         value: "3306"
-      # DB_HOST, DB_NAME, DB_USER, DB_PASS — set manually in dashboard
-      # (from Aiven or your external MySQL provider)

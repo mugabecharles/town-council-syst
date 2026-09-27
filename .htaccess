@@ -1,28 +1,20 @@
-# TCMS - Apache Configuration
+# TCMS - Apache .htaccess
+# NOTE: <Directory> blocks are NOT allowed in .htaccess — removed
+
 Options -Indexes
 ServerSignature Off
 
-# PHP settings
-php_flag display_errors Off
-php_flag log_errors On
-php_value session.cookie_httponly 1
-php_value session.use_only_cookies 1
-php_value session.cookie_samesite "Strict"
-
-# Protect sensitive directories
-<FilesMatch "\.(sql|log|env|bak|config)$">
+# Block access to sensitive file types
+<FilesMatch "\.(sql|log|env|bak|config|sh|yaml|yml)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
 
-# Protect uploads from PHP execution
-<Directory "uploads">
-    php_flag engine off
-    <FilesMatch "\.php$">
-        Order Allow,Deny
-        Deny from all
-    </FilesMatch>
-</Directory>
+# Block access to hidden files (dotfiles)
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
 
 # Security headers
 <IfModule mod_headers.c>
@@ -33,14 +25,7 @@ php_value session.cookie_samesite "Strict"
     Header always unset X-Powered-By
 </IfModule>
 
-# Prevent access to hidden files
-<FilesMatch "^\.">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
-
-# Friendly URL rewriting (optional)
+# URL rewriting
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /Town%20Council%20syst/
 </IfModule>
