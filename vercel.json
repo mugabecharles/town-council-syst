@@ -1,53 +1,22 @@
 {
   "version": 2,
-  "name": "town-council-syst",
-  "builds": [
-    {
-      "src": "**/*.php",
-      "use": "@vercel/php"
-    },
-    {
-      "src": "assets/**",
-      "use": "@vercel/static"
+  "functions": {
+    "**/*.php": {
+      "runtime": "vercel-php@0.7.2",
+      "maxDuration": 30
     }
-  ],
+  },
   "routes": [
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "/uploads/$1"
-    },
-    {
-      "src": "^/$",
-      "dest": "/index.php"
-    },
-    {
-      "src": "/modules/(.*)\\.php",
-      "dest": "/modules/$1.php"
-    },
-    {
-      "src": "/api/(.*)\\.php",
-      "dest": "/api/$1.php"
-    },
-    {
-      "src": "/(.*)\\.php",
-      "dest": "/$1.php"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.php"
-    }
+    { "src": "/assets/(.*)",  "dest": "/assets/$1" },
+    { "src": "/uploads/(.*)", "dest": "/uploads/$1" },
+    { "src": "^/$",           "dest": "/index.php" },
+    { "src": "/api/(.+)\\.php",             "dest": "/api/$1.php" },
+    { "src": "/modules/(.+)\\.php",         "dest": "/modules/$1.php" },
+    { "src": "/modules/(.+)/(.+)\\.php",    "dest": "/modules/$1/$2.php" },
+    { "src": "/(.*)\\.php",                 "dest": "/$1.php" },
+    { "src": "/(.*)",                       "dest": "/index.php" }
   ],
   "env": {
     "APP_ENV": "production"
-  },
-  "functions": {
-    "**/*.php": {
-      "runtime": "@vercel/php@1.4.3",
-      "maxDuration": 30
-    }
   }
 }
