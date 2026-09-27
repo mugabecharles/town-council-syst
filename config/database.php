@@ -23,47 +23,48 @@ function env(string $key, string $default = ''): string {
     return $_ENV[$key] ?? getenv($key) ?: $default;
 }
 
-define('DB_HOST',    env('DB_HOST',    'localhost'));
-define('DB_NAME',    env('DB_NAME',    'tcms_db'));
-define('DB_USER',    env('DB_USER',    'root'));
-define('DB_PASS',    env('DB_PASS',    ''));
-define('DB_CHARSET', 'utf8mb4');
-
+defined('DB_HOST')    || define('DB_HOST',    env('DB_HOST',    'localhost'));
+defined('DB_NAME')    || define('DB_NAME',    env('DB_NAME',    'tcms_db'));
+defined('DB_USER')    || define('DB_USER',    env('DB_USER',    'root'));
+defined('DB_PASS')    || define('DB_PASS',    env('DB_PASS',    ''));
+defined('DB_CHARSET') || define('DB_CHARSET', 'utf8mb4');
 // ── Application ───────────────────────────────────────────────────
-define('APP_NAME',        'Town Council Management System');
-define('APP_SHORT_NAME',  'TCMS');
-define('COUNCIL_NAME',    env('COUNCIL_NAME', 'Kira Town Council'));
-define('COUNCIL_SLOGAN',  'Serving Our Community with Integrity');
-define('CURRENCY',        'UGX');
-define('CURRENCY_SYMBOL', 'UGX');
-define('APP_VERSION',     '1.0.0');
-define('APP_ENV',         env('APP_ENV', 'development'));
+defined('APP_NAME')       || define('APP_NAME',        'Town Council Management System');
+defined('APP_SHORT_NAME') || define('APP_SHORT_NAME',  'TCMS');
+defined('COUNCIL_NAME')   || define('COUNCIL_NAME',    env('COUNCIL_NAME', 'Kira Town Council'));
+defined('COUNCIL_SLOGAN') || define('COUNCIL_SLOGAN',  'Serving Our Community with Integrity');
+defined('CURRENCY')       || define('CURRENCY',        'UGX');
+defined('CURRENCY_SYMBOL')|| define('CURRENCY_SYMBOL', 'UGX');
+defined('APP_VERSION')    || define('APP_VERSION',     '1.0.0');
+defined('APP_ENV')        || define('APP_ENV',         env('APP_ENV', 'development'));
 
 // Derive APP_URL: honour explicit env var, else auto-detect
-if (env('APP_URL')) {
-    define('APP_URL', rtrim(env('APP_URL'), '/'));
-} else {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $base   = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-    define('APP_URL', "$scheme://$host$base");
+if (!defined('APP_URL')) {
+    if (env('APP_URL')) {
+        define('APP_URL', rtrim(env('APP_URL'), '/'));
+    } else {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $base   = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+        define('APP_URL', "$scheme://$host$base");
+    }
 }
 
-define('APP_PATH', realpath(__DIR__ . '/..'));
+defined('APP_PATH')             || define('APP_PATH', realpath(__DIR__ . '/..'));
 
 // ── Upload Settings ───────────────────────────────────────────────
-define('UPLOAD_PATH',        APP_PATH . '/uploads/');
-define('MAX_FILE_SIZE',      10 * 1024 * 1024); // 10 MB
-define('ALLOWED_EXTENSIONS', ['pdf', 'jpg', 'jpeg', 'png', 'docx', 'xlsx']);
+defined('UPLOAD_PATH')        || define('UPLOAD_PATH',        APP_PATH . '/uploads/');
+defined('MAX_FILE_SIZE')      || define('MAX_FILE_SIZE',      10 * 1024 * 1024);
+defined('ALLOWED_EXTENSIONS') || define('ALLOWED_EXTENSIONS', ['pdf', 'jpg', 'jpeg', 'png', 'docx', 'xlsx']);
 
 // ── Session & Security ────────────────────────────────────────────
-define('SESSION_TIMEOUT',    (int)env('SESSION_TIMEOUT', '1800'));
+defined('SESSION_TIMEOUT')    || define('SESSION_TIMEOUT',    (int)env('SESSION_TIMEOUT', '1800'));
 
 // ── Pagination ────────────────────────────────────────────────────
-define('RECORDS_PER_PAGE', 25);
+defined('RECORDS_PER_PAGE')   || define('RECORDS_PER_PAGE', 25);
 
-// ── Financial Year (can be overridden via system_settings table) ──
-define('CURRENT_FINANCIAL_YEAR', '2026/2027');
+// ── Financial Year ────────────────────────────────────────────────
+defined('CURRENT_FINANCIAL_YEAR') || define('CURRENT_FINANCIAL_YEAR', '2026/2027');
 
 /**
  * Get (singleton) PDO database connection.
