@@ -39,6 +39,15 @@ function startSecureSession(): void {
         ini_set('session.cookie_httponly', 1);
         ini_set('session.use_only_cookies', 1);
         ini_set('session.cookie_samesite', 'Strict');
+        ini_set('session.gc_maxlifetime', 86400);
+        ini_set('session.save_path', sys_get_temp_dir());
+        session_set_cookie_params([
+            'lifetime' => 86400,
+            'path'     => '/',
+            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Strict',
+        ]);
         session_start();
     }
 }
@@ -391,9 +400,12 @@ function csrfToken(): string {
 
 function verifyCsrf(): void {
     $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (!hash_equals(csrfToken(), $token)) {
-        http_response_code(403);
-        die('Invalid CSRF token.');
+    if (empty($token) || !hash_equals(csrfToken(), $token)) {
+        // CSRF failed — regenerate and redirect back
+        setFlash('danger', 'Your session expired. Please try again.');
+        $redirect = $_SERVER['HTTP_REFERER'] ?? APP_URL . '/modules/auth/login.php';
+        header('Location: ' . $redirect);
+        exit;
     }
 }
 
