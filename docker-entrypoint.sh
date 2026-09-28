@@ -3,7 +3,7 @@ set -e
 
 echo "=========================================="
 echo " TCMS - Town Council Management System"
-echo " Starting up..."
+echo " All-in-one: PHP + Apache + MySQL"
 echo "=========================================="
 
 # ── Configure Apache port (Render assigns $PORT dynamically) ───────
@@ -36,85 +36,79 @@ EOF
 
 echo "Apache configured on port $LISTEN_PORT"
 
-# ── Set APP_URL from Render external URL ───────────────────────────
+# ── Set APP_URL ────────────────────────────────────────────────────
 if [ -n "$RENDER_EXTERNAL_URL" ] && [ -z "$APP_URL" ]; then
     export APP_URL="$RENDER_EXTERNAL_URL"
-    echo "APP_URL: $APP_URL"
+fi
+echo "APP_URL: ${APP_URL:-not set}"
+
+# ── Initialize MySQL data directory if needed ──────────────────────
+if [ ! -d "/var/lib/mysql/mysql" ]; then
+    echo "Initializing MySQL data directory..."
+    mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql 2>&1 | tail -5
+    echo "MySQL initialized."
 fi
 
-# ── Run DB schema setup in background (non-blocking) ───────────────
-# This runs AFTER Apache starts so the health check passes immediately
-(
-    echo "[DB] Waiting 15s for Apache to start before DB setup..."
-    sleep 15
+# ── Start MySQL in background ─────────────────────────────────────
+echo "Starting MySQL..."
+mysqld_safe --user=mysql --skip-networking=0 &
+MYSQL_PID=$!
 
-    SSL_FLAG=""
-    [ "$DB_SSL" = "true" ] && SSL_FLAG="true"
-    DB_PORT_VAL="${DB_PORT:-3306}"
-
-    if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ]; then
-        echo "[DB] No DB credentials — skipping schema setup."
-        exit 0
+# Wait for MySQL to be ready
+echo "Waiting for MySQL to start..."
+for i in $(seq 1 30); do
+    if mysqladmin ping --silent 2>/dev/null; then
+        echo "MySQL is ready."
+        break
     fi
+    sleep 1
+done
 
-    # Wait for MySQL with retries
-    echo "[DB] Connecting to $DB_HOST:$DB_PORT_VAL ..."
-    for i in $(seq 1 20); do
-        CONNECTED=$(php -r "
-            try {
-                \$o=[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
-                if('${SSL_FLAG}'==='true') \$o[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]=false;
-                new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$o);
-                echo 'yes';
-            } catch(Exception \$e){ echo 'no'; }
-        " 2>/dev/null)
-        if [ "$CONNECTED" = "yes" ]; then
-            echo "[DB] Connected."
-            break
-        fi
-        echo "[DB] Attempt $i/20 failed — retry in 5s..."
-        sleep 5
-    done
+# ── Create database and user ───────────────────────────────────────
+echo "Setting up TCMS database..."
+mysql --user=root <<-EOSQL
+    CREATE DATABASE IF NOT EXISTS tcms_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE USER IF NOT EXISTS 'tcms_user'@'localhost' IDENTIFIED BY 'TcmsPass2026!';
+    GRANT ALL PRIVILEGES ON tcms_db.* TO 'tcms_user'@'localhost';
+    FLUSH PRIVILEGES;
+EOSQL
 
-    if [ "$CONNECTED" != "yes" ]; then
-        echo "[DB] Could not connect to MySQL. Schema setup skipped."
-        exit 0
-    fi
+# ── Check if schema already installed ─────────────────────────────
+TABLE_EXISTS=$(mysql --user=tcms_user --password=TcmsPass2026! tcms_db -sN -e "SHOW TABLES LIKE 'users';" 2>/dev/null)
 
-    # Check if schema already installed
-    TABLE_EXISTS=$(php -r "
-        try {
-            \$o=[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
-            if('${SSL_FLAG}'==='true') \$o[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]=false;
-            \$p=new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};dbname=${DB_NAME};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$o);
-            \$r=\$p->query(\"SHOW TABLES LIKE 'users'\");
-            echo \$r->rowCount()>0?'yes':'no';
-        } catch(Exception \$e){ echo 'no'; }
-    " 2>/dev/null)
+if [ -z "$TABLE_EXISTS" ]; then
+    echo "Installing TCMS schema..."
+    mysql --user=tcms_user --password=TcmsPass2026! tcms_db < /var/www/html/config/tcms_schema.sql 2>&1 | tail -3
+    echo "Schema installed."
+    echo "Default login: admin / Admin@2026"
+else
+    echo "Schema already installed — skipping."
+fi
 
-    if [ "$TABLE_EXISTS" = "yes" ]; then
-        echo "[DB] Schema already installed — skipping."
-        exit 0
-    fi
+# ── Override DB env vars to use local MySQL ────────────────────────
+export DB_HOST=127.0.0.1
+export DB_NAME=tcms_db
+export DB_USER=tcms_user
+export DB_PASS=TcmsPass2026!
+export DB_PORT=3306
+export DB_SSL=false
 
-    echo "[DB] Installing schema..."
-    php -r "
-        try {
-            \$o=[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
-            if('${SSL_FLAG}'==='true') \$o[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]=false;
-            \$p=new PDO('mysql:host=${DB_HOST};port=${DB_PORT_VAL};charset=utf8mb4','${DB_USER}','${DB_PASS}',\$o);
-            try { \$p->exec('CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); } catch(Exception \$e){}
-            \$p->exec('USE \`${DB_NAME}\`');
-            \$sql=file_get_contents('/var/www/html/config/tcms_schema.sql');
-            \$n=0;
-            foreach(array_filter(array_map('trim',explode(';',\$sql))) as \$s){
-                try { \$p->exec(\$s); \$n++; } catch(Exception \$e){}
-            }
-            echo \"[DB] Schema installed: \$n statements OK.\n\";
-        } catch(Exception \$e){ echo '[DB] Error: '.\$e->getMessage().\"\n\"; }
-    "
-    echo "[DB] Default login: admin / Admin@2026"
-) &
+# Write to a PHP-readable env file so Apache picks it up
+cat > /var/www/html/.env <<EOF
+DB_HOST=127.0.0.1
+DB_NAME=tcms_db
+DB_USER=tcms_user
+DB_PASS=TcmsPass2026!
+DB_PORT=3306
+DB_SSL=false
+APP_ENV=production
+APP_URL=${APP_URL:-https://town-council-syst.onrender.com}
+COUNCIL_NAME=${COUNCIL_NAME:-Kira Town Council}
+SESSION_TIMEOUT=${SESSION_TIMEOUT:-1800}
+EOF
 
-echo "Starting Apache..."
+echo ".env written for Apache/PHP"
+
+# ── Keep MySQL running and start Apache via supervisord ───────────
+echo "Starting services via supervisord..."
 exec "$@"
