@@ -141,4 +141,4 @@ All monetary values are in **Uganda Shillings (UGX)**.
 ## License
 
 Developed for Town Council / Local Government use.  
-&copy; 2026 Kira Town Council. All rights reserved.
+&copy; 2026 Kijura Town Council. All rights reserved.

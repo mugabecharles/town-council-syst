@@ -613,10 +613,10 @@ INSERT INTO wards (ward_code, name) VALUES
 ON DUPLICATE KEY UPDATE name=name;
 
 INSERT INTO system_settings (setting_key, setting_value, setting_group, description) VALUES
-('council_name', 'Kira Town Council', 'general', 'Full Council Name'),
-('council_address', 'P.O. Box 100, Kira', 'general', 'Physical/Postal Address'),
+('council_name', 'Kijura Town Council', 'general', 'Full Council Name'),
+('council_address', 'P.O. Box 100, Kijura', 'general', 'Physical/Postal Address'),
 ('council_phone', '+256 414 000000', 'general', 'Main Phone Number'),
-('council_email', 'info@kiratc.go.ug', 'general', 'Official Email'),
+('council_email', 'info@kijuratc.go.ug', 'general', 'Official Email'),
 ('current_financial_year', '2026/2027', 'financial', 'Active Financial Year'),
 ('receipt_prefix', 'RCP', 'revenue', 'Receipt Number Prefix'),
 ('voucher_prefix', 'PV', 'expenditure', 'Voucher Number Prefix'),

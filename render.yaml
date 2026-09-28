@@ -12,7 +12,7 @@ services:
       - key: APP_ENV
         value: production
       - key: COUNCIL_NAME
-        value: "Kira Town Council"
+        value: "Kijura Town Council"
       - key: SESSION_TIMEOUT
         value: "1800"
       - key: DB_SSL

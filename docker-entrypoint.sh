@@ -106,7 +106,7 @@ DB_PORT=3306
 DB_SSL=false
 APP_ENV=production
 APP_URL=${APP_URL:-https://town-council-syst.onrender.com}
-COUNCIL_NAME=${COUNCIL_NAME:-Kira Town Council}
+COUNCIL_NAME=${COUNCIL_NAME:-Kijura Town Council}
 SESSION_TIMEOUT=${SESSION_TIMEOUT:-1800}
 EOF
 

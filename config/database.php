@@ -31,7 +31,7 @@ defined('DB_CHARSET') || define('DB_CHARSET', 'utf8mb4');
 // ── Application ───────────────────────────────────────────────────
 defined('APP_NAME')       || define('APP_NAME',        'Town Council Management System');
 defined('APP_SHORT_NAME') || define('APP_SHORT_NAME',  'TCMS');
-defined('COUNCIL_NAME')   || define('COUNCIL_NAME',    env('COUNCIL_NAME', 'Kira Town Council'));
+defined('COUNCIL_NAME')   || define('COUNCIL_NAME',    env('COUNCIL_NAME', 'Kijura Town Council'));
 defined('COUNCIL_SLOGAN') || define('COUNCIL_SLOGAN',  'Serving Our Community with Integrity');
 defined('CURRENCY')       || define('CURRENCY',        'UGX');
 defined('CURRENCY_SYMBOL')|| define('CURRENCY_SYMBOL', 'UGX');
