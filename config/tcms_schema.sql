@@ -627,5 +627,5 @@ ON DUPLICATE KEY UPDATE setting_key=setting_key;
 
 -- Default admin user (password: Admin@2026)
 INSERT INTO users (employee_id, username, email, password_hash, full_name, phone, role_id, department_id, designation, is_active) VALUES
-('EMP001', 'admin', 'admin@tcms.local', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.ucrIGthiu', 'System Administrator', '+256700000000', 1, 6, 'System Administrator', 1)
-ON DUPLICATE KEY UPDATE username=username;
+('EMP001', 'admin', 'admin@tcms.local', '$2y$12$IUJGV4GO4P9SQkmV9sRmpe7sjbWiAv9BMvijd1aJeKm7idl7Jrl22', 'System Administrator', '+256700000000', 1, 6, 'System Administrator', 1)
+ON DUPLICATE KEY UPDATE password_hash='$2y$12$IUJGV4GO4P9SQkmV9sRmpe7sjbWiAv9BMvijd1aJeKm7idl7Jrl22';

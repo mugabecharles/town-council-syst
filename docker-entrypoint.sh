@@ -82,7 +82,10 @@ if [ -z "$TABLE_EXISTS" ]; then
     echo "Schema installed."
     echo "Default login: admin / Admin@2026"
 else
-    echo "Schema already installed — skipping."
+    echo "Schema already installed — resetting admin password..."
+    mysql --user=tcms_user --password=TcmsPass2026! tcms_db -e \
+      "UPDATE users SET password_hash='\$2y\$12\$IUJGV4GO4P9SQkmV9sRmpe7sjbWiAv9BMvijd1aJeKm7idl7Jrl22', login_attempts=0, locked_until=NULL WHERE username='admin';"
+    echo "Admin password reset to: Admin@2026"
 fi
 
 # ── Override DB env vars to use local MySQL ────────────────────────
