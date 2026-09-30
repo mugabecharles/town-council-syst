@@ -61,10 +61,11 @@ function getSidebarNav(array $user): array {
 
     // Reports
     $nav[] = ['section' => 'Reports'];
-    $nav[] = ['label' => 'Revenue Reports',   'href' => 'modules/reports/revenue.php',        'icon' => '▨', 'module' => 'reports'];
-    $nav[] = ['label' => 'Finance Reports',   'href' => 'modules/reports/finance.php',        'icon' => '▩', 'module' => 'reports'];
+    $nav[] = ['label' => 'Revenue Reports',    'href' => 'modules/reports/revenue.php',   'icon' => '▨', 'module' => 'reports'];
+    $nav[] = ['label' => 'Finance Reports',    'href' => 'modules/reports/finance.php',   'icon' => '▩', 'module' => 'reports'];
+    $nav[] = ['label' => 'Cash Flow & Intel',  'href' => 'modules/reports/cashflow.php',  'icon' => '◈', 'module' => 'cashflow'];
     if (in_array($role, ['admin','town_clerk','auditor'])) {
-        $nav[] = ['label' => 'Audit Reports', 'href' => 'modules/reports/audit.php',          'icon' => '◫', 'module' => 'reports'];
+        $nav[] = ['label' => 'Audit Reports',  'href' => 'modules/reports/audit.php',     'icon' => '◫', 'module' => 'reports'];
     }
 
     // Administration

@@ -629,3 +629,69 @@ ON DUPLICATE KEY UPDATE setting_key=setting_key;
 INSERT INTO users (employee_id, username, email, password_hash, full_name, phone, role_id, department_id, designation, is_active) VALUES
 ('EMP001', 'admin', 'admin@tcms.local', '$2y$12$IUJGV4GO4P9SQkmV9sRmpe7sjbWiAv9BMvijd1aJeKm7idl7Jrl22', 'System Administrator', '+256700000000', 1, 6, 'System Administrator', 1)
 ON DUPLICATE KEY UPDATE password_hash='$2y$12$IUJGV4GO4P9SQkmV9sRmpe7sjbWiAv9BMvijd1aJeKm7idl7Jrl22';
+
+
+-- ============================================================
+-- FINANCIAL INTELLIGENCE TABLES (v1.1)
+-- ============================================================
+
+-- Budget variance alert log
+CREATE TABLE IF NOT EXISTS budget_alert_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    budget_id INT NOT NULL,
+    department_id INT NOT NULL,
+    financial_year VARCHAR(20) NOT NULL,
+    alert_level ENUM('warning_80','warning_90','exceeded_100') NOT NULL,
+    budget_amount DECIMAL(15,2) NOT NULL,
+    spent_amount DECIMAL(15,2) NOT NULL,
+    utilization_pct DECIMAL(5,2) NOT NULL,
+    notified_users JSON,
+    is_resolved TINYINT(1) DEFAULT 0,
+    resolved_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_alert (budget_id, alert_level, financial_year),
+    FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE CASCADE,
+    FOREIGN KEY (department_id) REFERENCES departments(id)
+);
+
+-- Revenue forecast snapshots (saved daily)
+CREATE TABLE IF NOT EXISTS revenue_forecasts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    financial_year VARCHAR(20) NOT NULL,
+    forecast_date DATE NOT NULL,
+    annual_target DECIMAL(15,2) NOT NULL,
+    collected_to_date DECIMAL(15,2) NOT NULL,
+    projected_annual DECIMAL(15,2) NOT NULL,
+    collection_rate_daily DECIMAL(15,2) NOT NULL,
+    days_elapsed INT NOT NULL,
+    days_remaining INT NOT NULL,
+    confidence_pct DECIMAL(5,2),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_forecast (financial_year, forecast_date)
+);
+
+-- Cash flow weekly snapshots
+CREATE TABLE IF NOT EXISTS cashflow_snapshots (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    snapshot_date DATE NOT NULL,
+    financial_year VARCHAR(20) NOT NULL,
+    week_number INT NOT NULL,
+    revenue_in DECIMAL(15,2) DEFAULT 0,
+    govt_funds_in DECIMAL(15,2) DEFAULT 0,
+    expenditure_out DECIMAL(15,2) DEFAULT 0,
+    net_position DECIMAL(15,2) DEFAULT 0,
+    cumulative_position DECIMAL(15,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_snapshot (financial_year, week_number)
+);
+
+-- Add extra settings for financial intelligence
+INSERT INTO system_settings (setting_key, setting_value, setting_group, description) VALUES
+('budget_alert_80', '1', 'alerts', 'Send alert when budget reaches 80%'),
+('budget_alert_90', '1', 'alerts', 'Send alert when budget reaches 90%'),
+('budget_alert_100', '1', 'alerts', 'Send alert when budget is exceeded'),
+('forecast_target_fy', '2026/2027', 'forecast', 'Financial year for revenue forecasting'),
+('alert_email_finance', '', 'alerts', 'Email address for finance alerts'),
+('alert_email_tc', '', 'alerts', 'Email address for Town Clerk alerts')
+ON DUPLICATE KEY UPDATE setting_key=setting_key;
