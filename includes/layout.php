@@ -38,6 +38,7 @@ function getSidebarNav(array $user): array {
     if (in_array($role, ['admin','town_clerk','finance_officer','hod','auditor'])) {
         if (!in_array(['section' => 'Finance'], $nav)) $nav[] = ['section' => 'Finance'];
         $nav[] = ['label' => 'Payment Vouchers',  'href' => 'modules/expenditure/vouchers.php',  'icon' => '▤', 'module' => 'vouchers'];
+        $nav[] = ['label' => 'Requisitions',       'href' => 'modules/expenditure/requisitions.php','icon' => '◑', 'module' => 'requisitions'];
         $nav[] = ['label' => 'Pending Approvals', 'href' => 'modules/expenditure/approvals.php', 'icon' => '▥', 'module' => 'approvals'];
     }
 
