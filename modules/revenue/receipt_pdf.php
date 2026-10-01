@@ -7,6 +7,12 @@ require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../lib/pdf.php';
 requireLogin();
 
+// Ensure APP_URL is defined for the footer
+if (!defined('APP_URL')) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    define('APP_URL', $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+}
+
 $ref = trim($_GET['ref'] ?? '');
 if (!$ref) { http_response_code(400); die('Invalid receipt reference.'); }
 

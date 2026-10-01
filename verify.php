@@ -7,6 +7,13 @@
  */
 require_once __DIR__ . '/config/database.php';
 
+// APP_URL may not be defined if accessed before full boot — derive it
+if (!defined('APP_URL')) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    define('APP_URL', $scheme . '://' . $host);
+}
+
 $ref     = trim($_GET['ref'] ?? '');
 $receipt = null;
 $error   = '';
