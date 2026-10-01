@@ -26,6 +26,7 @@ function getSidebarNav(array $user): array {
         $nav[] = ['label' => 'Payments & Receipts',  'href' => 'modules/revenue/payments.php',     'icon' => '◇', 'module' => 'payments'];
         $nav[] = ['label' => 'Arrears & Defaulters', 'href' => 'modules/revenue/arrears.php',      'icon' => '▲', 'module' => 'arrears'];
         $nav[] = ['label' => 'Demand Notices',       'href' => 'modules/revenue/demand_notice.php', 'icon' => '◆', 'module' => 'demand_notice'];
+        $nav[] = ['label' => 'Bulk Import',           'href' => 'modules/revenue/bulk_import.php',   'icon' => '◑', 'module' => 'bulk_import'];
     }
 
     // Finance & Budget

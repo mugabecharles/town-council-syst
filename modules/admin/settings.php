@@ -181,6 +181,8 @@ renderFlashMessages();
     <button class="tab-link <?= $activeTab==='revsrc'?'active':'' ?>"    data-tab="revsrcTab">Revenue Sources</button>
     <button class="tab-link <?= $activeTab==='fundsrc'?'active':'' ?>"   data-tab="fundsrcTab">Funding Sources</button>
     <button class="tab-link <?= $activeTab==='email'?'active':'' ?>"     data-tab="emailTab">✉ Email / SMTP</button>
+    <button class="tab-link <?= $activeTab==='sms'?'active':'' ?>"       data-tab="smsTab">📱 SMS</button>
+    <button class="tab-link <?= $activeTab==='security'?'active':'' ?>"  data-tab="securityTab">🔒 Security / 2FA</button>
   </div>
 </div>
 
@@ -733,6 +735,263 @@ renderFlashMessages();
   </div>
 </div>
 
+
+<!-- ══ SMS TAB ═══════════════════════════════════════════════════ -->
+<div id="smsTab" class="tab-panel <?= $activeTab==='sms'?'active':'' ?>">
+  <div class="grid-2" style="align-items:start;">
+
+    <!-- SMS Configuration -->
+    <div class="card">
+      <div class="card-header"><h5><span class="ch-icon">📱</span> SMS Gateway Configuration</h5></div>
+      <div class="card-body">
+        <form method="POST">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="save_settings">
+          <input type="hidden" name="active_tab" value="sms">
+          <?php
+          $smsSettings = $grouped['sms'] ?? [];
+          foreach ($smsSettings as $s):
+            $isKey = str_contains($s['setting_key'], 'key') || str_contains($s['setting_key'], 'pass');
+          ?>
+          <div class="form-group">
+            <label class="form-label"><?= htmlspecialchars(ucwords(str_replace('_',' ', $s['setting_key']))) ?></label>
+            <?php if ($s['setting_key'] === 'sms_enabled' || $s['setting_key'] === 'sms_gateway'): ?>
+            <select name="settings[<?= $s['setting_key'] ?>]" class="form-select">
+              <?php if ($s['setting_key'] === 'sms_enabled'): ?>
+              <option value="0" <?= ($s['setting_value']??'0')==='0'?'selected':'' ?>>Disabled</option>
+              <option value="1" <?= ($s['setting_value']??'0')==='1'?'selected':'' ?>>Enabled</option>
+              <?php else: ?>
+              <option value="africastalking" <?= ($s['setting_value']??'')==='africastalking'?'selected':'' ?>>Africa's Talking</option>
+              <option value="vonage"         <?= ($s['setting_value']??'')==='vonage'?'selected':'' ?>>Vonage (Nexmo)</option>
+              <?php endif; ?>
+            </select>
+            <?php else: ?>
+            <input type="<?= $isKey?'password':'text' ?>"
+                   name="settings[<?= $s['setting_key'] ?>]"
+                   class="form-control"
+                   value="<?= $isKey?'':htmlspecialchars($s['setting_value']??'') ?>"
+                   placeholder="<?= $isKey?'(leave blank to keep)':'' ?>">
+            <?php endif; ?>
+            <?php if ($s['description']): ?><div class="form-text"><?= htmlspecialchars($s['description']) ?></div><?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+          <button type="submit" class="btn btn-primary">Save SMS Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- SMS Guide + Stats -->
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header"><h5><span class="ch-icon">◎</span> Africa's Talking Setup</h5></div>
+        <div class="card-body">
+          <div style="background:#f8f9fa;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.83rem;line-height:1.8;">
+            <strong>Step 1:</strong> Sign up at <a href="https://africastalking.com" target="_blank">africastalking.com</a><br>
+            <strong>Step 2:</strong> Go to Settings → API Key → Generate<br>
+            <strong>Step 3:</strong> Use <code>sandbox</code> as username for testing<br>
+            <strong>Step 4:</strong> For production, use your real username<br>
+            <strong>Step 5:</strong> Register a Sender ID (e.g. <code>KIJURA_TC</code>)
+          </div>
+          <div style="background:#fff3cd;border-left:3px solid #d39e00;padding:.8rem 1rem;border-radius:0 6px 6px 0;font-size:.8rem;">
+            <strong>Uganda note:</strong> Sender IDs must be approved by the gateway provider.
+            Use your council acronym — max 11 characters, alphanumeric only.
+          </div>
+        </div>
+      </div>
+
+      <!-- SMS Queue Stats -->
+      <div class="card">
+        <div class="card-header"><h5><span class="ch-icon">◈</span> SMS Queue Status</h5></div>
+        <div class="card-body">
+          <?php
+          try {
+            $smsStats = $db->query("SELECT status, COUNT(*) cnt FROM sms_queue GROUP BY status")->fetchAll();
+            $smsMap   = array_column($smsStats,'cnt','status');
+            $smsTot   = array_sum($smsMap);
+          ?>
+          <div class="grid-3" style="gap:.5rem;margin-bottom:1rem;">
+            <div style="text-align:center;padding:.7rem;background:#d4edda;border-radius:8px;">
+              <div class="fs-xs text-muted">Sent</div>
+              <div class="fw-700 text-success"><?= $smsMap['sent']??0 ?></div>
+            </div>
+            <div style="text-align:center;padding:.7rem;background:#fff3cd;border-radius:8px;">
+              <div class="fs-xs text-muted">Pending</div>
+              <div class="fw-700 text-warning"><?= $smsMap['pending']??0 ?></div>
+            </div>
+            <div style="text-align:center;padding:.7rem;background:#f8d7da;border-radius:8px;">
+              <div class="fs-xs text-muted">Failed</div>
+              <div class="fw-700 text-danger"><?= $smsMap['failed']??0 ?></div>
+            </div>
+          </div>
+          <div class="fs-sm text-muted">Total messages: <?= $smsTot ?></div>
+          <?php } catch(Exception $e) { echo '<p class="fs-sm text-muted">Queue not available.</p>'; } ?>
+
+          <?php if ((getSystemSetting('sms_enabled')??'0') === '1'): ?>
+          <!-- Recent SMS log -->
+          <?php
+          try {
+            $recentSms = $db->query("SELECT phone, recipient_name, LEFT(message,60) AS msg, status, created_at FROM sms_queue ORDER BY created_at DESC LIMIT 8")->fetchAll();
+            if ($recentSms): ?>
+          <div class="table-wrapper" style="margin-top:1rem;">
+            <table class="tcms-table table-sm">
+              <thead><tr><th>Recipient</th><th>Message</th><th>Status</th><th>Sent</th></tr></thead>
+              <tbody>
+              <?php foreach ($recentSms as $sms): ?>
+              <tr>
+                <td><div class="fw-600 fs-xs"><?= htmlspecialchars($sms['recipient_name']??$sms['phone']) ?></div><div class="fs-xs text-muted"><?= htmlspecialchars($sms['phone']) ?></div></td>
+                <td class="fs-xs"><?= htmlspecialchars($sms['msg']) ?>...</td>
+                <td><?= getStatusBadge($sms['status']) ?></td>
+                <td class="fs-xs"><?= formatDateTime($sms['created_at']) ?></td>
+              </tr>
+              <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+          <?php endif; } catch(Exception $e){} ?>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECURITY / 2FA TAB ══════════════════════════════════════════ -->
+<div id="securityTab" class="tab-panel <?= $activeTab==='security'?'active':'' ?>">
+  <div class="grid-2" style="align-items:start;">
+
+    <!-- 2FA Settings -->
+    <div class="card">
+      <div class="card-header"><h5><span class="ch-icon">🔒</span> Two-Factor Authentication (2FA)</h5></div>
+      <div class="card-body">
+        <form method="POST">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="save_settings">
+          <input type="hidden" name="active_tab" value="security">
+          <?php
+          $securitySettings = array_filter($grouped['security'] ?? [], function($s) {
+              return in_array($s['setting_key'], ['two_fa_enabled','two_fa_roles','otp_expiry_minutes',
+                                                  'session_timeout','max_login_attempts']);
+          });
+          foreach ($securitySettings as $s):
+          ?>
+          <div class="form-group">
+            <label class="form-label"><?= htmlspecialchars(ucwords(str_replace('_',' ',$s['setting_key']))) ?></label>
+            <?php if ($s['setting_key'] === 'two_fa_enabled'): ?>
+            <select name="settings[<?= $s['setting_key'] ?>]" class="form-select">
+              <option value="0" <?= ($s['setting_value']??'0')==='0'?'selected':'' ?>>Disabled (no 2FA)</option>
+              <option value="1" <?= ($s['setting_value']??'0')==='1'?'selected':'' ?>>Enabled (require OTP for selected roles)</option>
+            </select>
+            <?php else: ?>
+            <input type="text" name="settings[<?= $s['setting_key'] ?>]"
+                   class="form-control"
+                   value="<?= htmlspecialchars($s['setting_value']??'') ?>">
+            <?php endif; ?>
+            <?php if ($s['description']): ?><div class="form-text"><?= htmlspecialchars($s['description']) ?></div><?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+          <button type="submit" class="btn btn-primary">Save Security Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2FA Guide + Alert Settings -->
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header"><h5><span class="ch-icon">◎</span> How 2FA Works</h5></div>
+        <div class="card-body" style="font-size:.83rem;line-height:1.8;">
+          <ol style="padding-left:1.2rem;color:#444;">
+            <li>User enters username and password as normal.</li>
+            <li>If their role requires 2FA, a 6-digit code is sent to their email.</li>
+            <li>User enters the code on the verification screen.</li>
+            <li>Code expires after the configured number of minutes.</li>
+            <li>3 wrong attempts invalidates the code — user must request a new one.</li>
+          </ol>
+          <div style="background:#d4edda;border-left:3px solid #1e7e34;padding:.8rem 1rem;border-radius:0 6px 6px 0;margin-top:.8rem;font-size:.8rem;">
+            <strong>Prerequisite:</strong> Email (SMTP) must be configured on the Email tab for OTP delivery to work.
+          </div>
+          <div style="background:#f8f9fa;border-radius:6px;padding:.8rem 1rem;margin-top:.8rem;font-size:.8rem;">
+            <strong>Recommended 2FA roles:</strong><br>
+            <code>admin,town_clerk,finance_officer</code><br>
+            These are the roles with financial approval authority.
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget & Alert Settings -->
+      <div class="card">
+        <div class="card-header"><h5><span class="ch-icon">⚠</span> Budget & Alert Settings</h5></div>
+        <div class="card-body">
+          <form method="POST">
+            <?= csrfField() ?>
+            <input type="hidden" name="action" value="save_settings">
+            <input type="hidden" name="active_tab" value="security">
+            <?php
+            $alertSettings = $grouped['alerts'] ?? [];
+            foreach ($alertSettings as $s):
+              $isBool = in_array($s['setting_key'], ['budget_alert_80','budget_alert_90','budget_alert_100','budget_alert_email','budget_alert_sms']);
+            ?>
+            <div class="form-group">
+              <label class="form-label"><?= htmlspecialchars(ucwords(str_replace('_',' ',$s['setting_key']))) ?></label>
+              <?php if ($isBool): ?>
+              <select name="settings[<?= $s['setting_key'] ?>]" class="form-select">
+                <option value="0" <?= ($s['setting_value']??'0')==='0'?'selected':'' ?>>No</option>
+                <option value="1" <?= ($s['setting_value']??'0')==='1'?'selected':'' ?>>Yes</option>
+              </select>
+              <?php else: ?>
+              <input type="text" name="settings[<?= $s['setting_key'] ?>]" class="form-control"
+                     value="<?= htmlspecialchars($s['setting_value']??'') ?>">
+              <?php endif; ?>
+              <?php if ($s['description']): ?><div class="form-text"><?= htmlspecialchars($s['description']) ?></div><?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+            <button type="submit" class="btn btn-primary">Save Alert Settings</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTP Token Log -->
+  <div class="card" style="margin-top:1.2rem;">
+    <div class="card-header"><h5><span class="ch-icon">◮</span> Recent OTP Activity (Last 20)</h5></div>
+    <div class="card-body p-0">
+      <?php
+      try {
+        $otpLog = $db->query("SELECT o.*, u.full_name, u.username FROM otp_tokens o
+          JOIN users u ON o.user_id=u.id ORDER BY o.created_at DESC LIMIT 20")->fetchAll();
+      ?>
+      <?php if ($otpLog): ?>
+      <div class="table-wrapper">
+        <table class="tcms-table table-sm">
+          <thead><tr><th>User</th><th>Purpose</th><th>IP Address</th><th>Expires</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody>
+          <?php foreach ($otpLog as $otp): ?>
+          <tr>
+            <td><div class="fw-600 fs-sm"><?= htmlspecialchars($otp['full_name']) ?></div><div class="fs-xs text-muted"><?= htmlspecialchars($otp['username']) ?></div></td>
+            <td><span class="badge badge-info"><?= ucfirst($otp['purpose']) ?></span></td>
+            <td class="fs-xs text-muted"><?= htmlspecialchars($otp['ip_address']??'—') ?></td>
+            <td class="fs-sm"><?= formatDateTime($otp['expires_at']) ?></td>
+            <td>
+              <?php if ($otp['is_used']): ?>
+                <span class="badge badge-success">Used</span>
+              <?php elseif (strtotime($otp['expires_at']) < time()): ?>
+                <span class="badge badge-secondary">Expired</span>
+              <?php else: ?>
+                <span class="badge badge-warning">Pending</span>
+              <?php endif; ?>
+            </td>
+            <td class="fs-xs"><?= formatDateTime($otp['created_at']) ?></td>
+          </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <?php else: ?><div class="empty-state" style="padding:1.5rem;"><p>No OTP tokens yet.</p></div><?php endif; ?>
+      <?php } catch(Exception $e) { echo '<p class="fs-sm text-muted p-0" style="padding:1rem;">OTP log not available.</p>'; } ?>
+    </div>
+  </div>
+</div>
+
 <?php renderPageEnd(); echo '</div></div>'; ?>
 <script>
 function editSource(s) {
@@ -753,7 +1012,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'fy':       'fyTab',
     'revsrc':   'revsrcTab',
     'fundsrc':  'fundsrcTab',
-    'email':    'emailTab'
+    'email':    'emailTab',
+    'sms':      'smsTab',
+    'security': 'securityTab'
   };
   const param = new URLSearchParams(window.location.search).get('tab');
   if (param && tabMap[param]) {

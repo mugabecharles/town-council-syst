@@ -481,15 +481,33 @@ function checkBudgetAlerts(): array {
                      . 'Spent: UGX ' . number_format($b['spent_amount'])
                      . ' of UGX ' . number_format($b['effective_budget']) . '.';
 
-            // Notify all Town Clerks and Finance Officers
+            // Notify all Town Clerks and Finance Officers (in-app)
             $recipients = $db->query("
-                SELECT u.id FROM users u
+                SELECT u.id, u.email, u.full_name FROM users u
                 JOIN roles r ON u.role_id = r.id
                 WHERE r.slug IN ('town_clerk','finance_officer','admin') AND u.is_active = 1
-            ")->fetchAll(PDO::FETCH_COLUMN);
+            ")->fetchAll();
 
-            foreach ($recipients as $uid) {
-                sendNotification((int)$uid, $title, $message, $types[$level], 'budget', $b['id']);
+            foreach ($recipients as $rec) {
+                sendNotification((int)$rec['id'], $title, $message, $types[$level], 'budget', $b['id']);
+            }
+
+            // ── Email alert ────────────────────────────────────────
+            if ((getSystemSetting('budget_alert_email') ?? '1') === '1') {
+                _sendBudgetAlertEmail($b, $pct, $level, $fy, $recipients);
+            }
+
+            // ── SMS alert ──────────────────────────────────────────
+            if ((getSystemSetting('budget_alert_sms') ?? '0') === '1') {
+                foreach ($recipients as $rec) {
+                    if (!empty($rec['phone'] ?? '')) {
+                        // sms.php may not be loaded here — check first
+                        if (function_exists('smsBudgetAlert')) {
+                            smsBudgetAlert($rec['phone'] ?? '', $rec['full_name'], $b['dept_name'], $pct);
+                        }
+                    }
+                }
+                if (function_exists('processSmsQueue')) processSmsQueue(5);
             }
 
             logAudit('BUDGET_ALERT', 'budget', 'budget', $b['id'], $b['budget_code'],
@@ -810,4 +828,80 @@ function getBudgetVarianceSummary(string $fy = ''): array {
     } catch (Exception $e) {
         return [];
     }
+}
+
+
+// ─── Budget Alert Email Helper ────────────────────────────────────────────────
+
+function _sendBudgetAlertEmail(array $b, float $pct, string $level, string $fy, array $recipients): void {
+    // Lazy-load email engine (only if not already loaded)
+    if (!function_exists('queueEmail')) {
+        $emailFile = __DIR__ . '/email.php';
+        if (file_exists($emailFile)) require_once $emailFile;
+        else return;
+    }
+
+    $council  = getSystemSetting('council_name') ?? 'Kijura Town Council';
+    $appUrl   = defined('APP_URL') ? APP_URL : '';
+
+    $levelConfig = [
+        'warning_80'   => ['label' => '⚠ 80% Budget Utilization Warning', 'color' => '#d39e00', 'bg' => '#fff3cd'],
+        'warning_90'   => ['label' => '🔴 90% Budget Utilization — Critical Alert', 'color' => '#bd2130', 'bg' => '#f8d7da'],
+        'exceeded_100' => ['label' => '🚨 BUDGET EXCEEDED — Immediate Action Required', 'color' => '#bd2130', 'bg' => '#f8d7da'],
+    ];
+    $cfg = $levelConfig[$level] ?? $levelConfig['warning_80'];
+
+    $balance     = $b['effective_budget'] - $b['spent_amount'];
+    $balanceStr  = 'UGX ' . number_format($balance);
+    $spentStr    = 'UGX ' . number_format($b['spent_amount']);
+    $budgetStr   = 'UGX ' . number_format($b['effective_budget']);
+
+    $bodyContent = "
+        <div style='background:{$cfg['bg']};border-left:4px solid {$cfg['color']};padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:20px;'>
+            <strong style='color:{$cfg['color']};font-size:15px;'>{$cfg['label']}</strong>
+        </div>
+        <p>The following department has reached a budget threshold that requires your attention:</p>
+        <table style='width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;'>
+            <tr style='background:#f8f9fa;'>
+                <td style='padding:9px 12px;font-weight:700;border:1px solid #dee2e6;width:40%;'>Department</td>
+                <td style='padding:9px 12px;border:1px solid #dee2e6;font-weight:700;color:#1a3a5c;'>{$b['dept_name']}</td>
+            </tr>
+            <tr>
+                <td style='padding:9px 12px;font-weight:700;border:1px solid #dee2e6;'>Financial Year</td>
+                <td style='padding:9px 12px;border:1px solid #dee2e6;'>$fy</td>
+            </tr>
+            <tr style='background:#f8f9fa;'>
+                <td style='padding:9px 12px;font-weight:700;border:1px solid #dee2e6;'>Budget Code</td>
+                <td style='padding:9px 12px;border:1px solid #dee2e6;'>{$b['budget_code']}</td>
+            </tr>
+            <tr>
+                <td style='padding:9px 12px;font-weight:700;border:1px solid #dee2e6;'>Approved Budget</td>
+                <td style='padding:9px 12px;border:1px solid #dee2e6;'>$budgetStr</td>
+            </tr>
+            <tr style='background:#f8f9fa;'>
+                <td style='padding:9px 12px;font-weight:700;border:1px solid #dee2e6;'>Amount Spent</td>
+                <td style='padding:9px 12px;border:1px solid #dee2e6;font-weight:700;color:{$cfg['color']};'>$spentStr ($pct%)</td>
+            </tr>
+            <tr>
+                <td style='padding:9px 12px;font-weight:700;border:1px solid #dee2e6;'>Remaining Balance</td>
+                <td style='padding:9px 12px;border:1px solid #dee2e6;" . ($balance < 0 ? "color:#bd2130;font-weight:700;" : "") . "'>$balanceStr</td>
+            </tr>
+        </table>
+        " . ($level === 'exceeded_100' ? "
+        <div style='background:#f8d7da;border:1px solid #f5c6cb;padding:12px 16px;border-radius:6px;margin:12px 0;'>
+            <strong style='color:#721c24;'>Action Required:</strong>
+            <span style='color:#721c24;'>This department has exceeded its approved budget. No further expenditure should be approved without a budget revision or additional allocation.</span>
+        </div>" : "") . "
+        <p>Please log in to review the department's expenditure and take appropriate action.</p>";
+
+    $subject = "[{$council}] {$cfg['label']}: {$b['dept_name']} — FY $fy";
+
+    foreach ($recipients as $rec) {
+        if (empty($rec['email'])) continue;
+        $html = emailTemplate($cfg['label'], $bodyContent, "$appUrl/modules/reports/cashflow.php", 'View Budget Dashboard');
+        queueEmail($rec['email'], $rec['full_name'], $subject, $html, '', 'budget', $b['id']);
+    }
+
+    // Process immediately (non-blocking, max 3)
+    if (function_exists('processEmailQueue')) processEmailQueue(3);
 }

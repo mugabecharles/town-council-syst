@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/layout.php';
 require_once __DIR__ . '/../../includes/email.php';
+require_once __DIR__ . '/../../includes/sms.php';
 requireLogin();
 $user = getCurrentUser();
 $db   = getDB();
@@ -177,6 +178,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Process the email queue non-blocking (max 5 per request)
         processEmailQueue(5);
+
+        // ── SMS triggers ──────────────────────────────────────────
+        $preparerPhone = $db->prepare("SELECT phone FROM users WHERE id=?");
+        $preparerPhone->execute([$vFresh['prepared_by']]); $prepPhone = $preparerPhone->fetchColumn();
+        if ($prepPhone) {
+            if ($action === 'mark_paid') {
+                smsVoucherApproval($prepPhone, $vFresh['preparer'], $vFresh['voucher_number'], 'PAID');
+            } elseif ($action === 'return_voucher') {
+                smsVoucherApproval($prepPhone, $vFresh['preparer'], $vFresh['voucher_number'], 'returned for correction', $returnNote);
+            } elseif ($action === 'reject') {
+                smsVoucherApproval($prepPhone, $vFresh['preparer'], $vFresh['voucher_number'], 'rejected', $comment);
+            }
+        }
+        processSmsQueue(3);
 
         setFlash('success', "Voucher {$approvalAction} successfully.");
         header('Location: voucher_view.php?id=' . $id); exit;

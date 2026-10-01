@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/layout.php';
+require_once __DIR__ . '/../../includes/sms.php';
+require_once __DIR__ . '/../../includes/email.php';
 requireLogin();
 $user = getCurrentUser();
 $db   = getDB();
@@ -38,6 +40,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         logAudit('CREATE', 'revenue', 'payment', $paymentId, $receiptNum, [], ['amount' => $amount]);
+
+        // ── SMS: payment confirmation to payer ────────────────────
+        $payerFull = $db->prepare("SELECT full_name, phone FROM payers WHERE id=?");
+        $payerFull->execute([$payerId]); $payerInfo = $payerFull->fetch();
+        $sourceName = $db->prepare("SELECT name FROM revenue_sources WHERE id=?");
+        $sourceName->execute([$sourceId]); $srcRow = $sourceName->fetch();
+        if ($payerInfo && $payerInfo['phone']) {
+            smsPaymentConfirmation(
+                $payerInfo['phone'], $payerInfo['full_name'],
+                $amount, $receiptNum, $srcRow['name'] ?? 'Revenue'
+            );
+            processSmsQueue(3);
+        }
+
         setFlash('success', "Payment recorded. Receipt: <strong>{$receiptNum}</strong> &mdash; <a href='receipt.php?ref={$receiptNum}' target='_blank'>View Receipt</a> | <a href='" . APP_URL . "/modules/revenue/receipt_pdf.php?ref={$receiptNum}' target='_blank'>⬇ PDF</a>");
     } elseif ($action === 'void_payment') {
         $paymentId = (int)$_POST['payment_id'];
