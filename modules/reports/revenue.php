@@ -179,7 +179,26 @@ renderPageStart('Revenue Reports', '', [
     ['url' => APP_URL . '/dashboard.php', 'label' => 'Dashboard'],
     ['url' => '#', 'label' => 'Revenue Reports']
 ]);
-renderPageActions('<button class="btn btn-outline-secondary no-print" data-print>🖨 Print</button>');
+renderPageActions('
+  <button class="btn btn-outline-secondary no-print" data-print>🖨 Print</button>
+  <div class="dropdown no-print" style="position:relative;display:inline-block;">
+    <button class="btn btn-primary" onclick="this.nextElementSibling.classList.toggle(\'show\')" style="gap:.4rem;">
+      📊 Export ▾
+    </button>
+    <div id="exportDrop" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid #dee2e6;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:200;min-width:200px;padding:.4rem 0;">
+      <a href="' . APP_URL . '/api/export.php?type=revenue_payments&fy=' . urlencode($fy) . '&date_from=' . $dateFrom . '&date_to=' . $dateTo . '" class="dropdown-link">📊 Payments — Excel</a>
+      <a href="' . APP_URL . '/api/export.php?type=revenue_payments&fy=' . urlencode($fy) . '&date_from=' . $dateFrom . '&date_to=' . $dateTo . '&format=csv" class="dropdown-link">📄 Payments — CSV</a>
+      <hr style="margin:.3rem 0;border-color:#f0f0f0;">
+      <a href="' . APP_URL . '/api/export.php?type=revenue_by_ward&fy=' . urlencode($fy) . '" class="dropdown-link">📊 By Ward — Excel</a>
+      <a href="' . APP_URL . '/api/export.php?type=revenue_by_source&fy=' . urlencode($fy) . '" class="dropdown-link">📊 By Source — Excel</a>
+      <a href="' . APP_URL . '/api/export.php?type=revenue_arrears&fy=' . urlencode($fy) . '" class="dropdown-link">📊 Arrears — Excel</a>
+      <hr style="margin:.3rem 0;border-color:#f0f0f0;">
+      <a href="' . APP_URL . '/api/export.php?type=payers" class="dropdown-link">📊 Payer Registry — Excel</a>
+    </div>
+  </div>
+  <style>.dropdown-link{display:block;padding:.5rem 1rem;font-size:.82rem;color:#1a3a5c;text-decoration:none;white-space:nowrap;}.dropdown-link:hover{background:#f4f6f9;}</style>
+  <script>document.addEventListener("click",function(e){var d=document.getElementById("exportDrop");if(d&&!e.target.closest(".dropdown"))d.style.display="none";});</script>
+');
 renderFlashMessages();
 ?>
 

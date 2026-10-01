@@ -35,6 +35,8 @@ renderPageStart('Payment Receipt', '', [
 ]);
 renderPageActions('
   <button class="btn btn-primary no-print" data-print>🖨 Print Receipt</button>
+  <a href="' . APP_URL . '/modules/revenue/receipt_pdf.php?ref=' . urlencode($pay['receipt_number']) . '" class="btn btn-outline-primary no-print" target="_blank">⬇ Download PDF</a>
+  <a href="' . APP_URL . '/verify.php?ref=' . urlencode($pay['receipt_number']) . '" class="btn btn-outline-secondary no-print" target="_blank">🔍 Verify</a>
   <a href="payments.php" class="btn btn-outline-secondary no-print">Back</a>
 ');
 renderFlashMessages();
@@ -101,11 +103,16 @@ renderFlashMessages();
       <div style="font-size:.75rem;color:#6c757d;margin-top:.3rem;"><?= htmlspecialchars($pay['officer_name']) ?></div>
     </div>
     <div style="text-align:center;">
-      <!-- QR placeholder -->
-      <div style="width:80px;height:80px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--text-muted);margin:0 auto;">
-        QR<br>Verification
+      <!-- QR code / Verification link -->
+      <div style="text-align:center;">
+        <div style="width:90px;height:90px;border:2px solid var(--border);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto;background:#f8f9fa;padding:6px;">
+          <div style="font-size:.6rem;color:var(--text-muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px;">Scan to Verify</div>
+          <!-- QR data URL (Google Charts API for QR) -->
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=<?= urlencode(APP_URL . '/verify.php?ref=' . $pay['receipt_number']) ?>"
+               alt="QR Code" width="70" height="70" style="display:block;">
+        </div>
+        <div style="font-size:.65rem;color:var(--text-muted);margin-top:.3rem;"><?= htmlspecialchars($pay['receipt_number']) ?></div>
       </div>
-      <div style="font-size:.68rem;color:var(--text-muted);margin-top:.3rem;">Scan to verify</div>
     </div>
     <div class="receipt-sig">
       <div style="height:40px;"></div>
@@ -114,10 +121,11 @@ renderFlashMessages();
     </div>
   </div>
 
-  <div style="text-align:center;margin-top:1.5rem;font-size:.72rem;color:var(--text-muted);border-top:1px dotted #ccc;padding-top:.8rem;">
-    This is an official receipt of <?= htmlspecialchars($councilName) ?>. Keep for your records.<br>
-    Printed: <?= date('d/m/Y H:i:s') ?> by <?= htmlspecialchars($user['full_name']) ?>
-  </div>
+    <div style="text-align:center;margin-top:1.5rem;font-size:.72rem;color:var(--text-muted);border-top:1px dotted #ccc;padding-top:.8rem;">
+      This is an official receipt of <?= htmlspecialchars($councilName) ?>. Keep for your records.<br>
+      Verify online: <strong><?= APP_URL ?>/verify.php?ref=<?= urlencode($pay['receipt_number']) ?></strong><br>
+      Printed: <?= date('d/m/Y H:i:s') ?> by <?= htmlspecialchars($user['full_name']) ?>
+    </div>
 
 </div>
 

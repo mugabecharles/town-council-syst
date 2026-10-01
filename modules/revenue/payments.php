@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         logAudit('CREATE', 'revenue', 'payment', $paymentId, $receiptNum, [], ['amount' => $amount]);
-        setFlash('success', "Payment recorded. Receipt: <strong>{$receiptNum}</strong> &mdash; <a href='receipt.php?ref={$receiptNum}' target='_blank'>Print Receipt</a>");
+        setFlash('success', "Payment recorded. Receipt: <strong>{$receiptNum}</strong> &mdash; <a href='receipt.php?ref={$receiptNum}' target='_blank'>View Receipt</a> | <a href='" . APP_URL . "/modules/revenue/receipt_pdf.php?ref={$receiptNum}' target='_blank'>⬇ PDF</a>");
     } elseif ($action === 'void_payment') {
         $paymentId = (int)$_POST['payment_id'];
         $reason    = trim($_POST['void_reason'] ?? '');
@@ -114,7 +114,9 @@ renderPageStart('Payments & Receipts', '', [
     ['url' => '#', 'label' => 'Payments & Receipts']
 ]);
 renderPageActions('<button class="btn btn-primary" data-modal="recordPaymentModal">+ Record Payment</button>
-  <a href="' . APP_URL . '/modules/revenue/dashboard.php" class="btn btn-outline-secondary">Revenue Dashboard</a>');
+  <a href="' . APP_URL . '/modules/revenue/dashboard.php" class="btn btn-outline-secondary">Revenue Dashboard</a>
+  <a href="' . APP_URL . '/api/export.php?type=revenue_payments&fy=' . urlencode($fy) . '&date_from=' . urlencode($dateFrom) . '&date_to=' . urlencode($dateTo) . '" class="btn btn-outline-primary no-print">📊 Export</a>
+');
 renderFlashMessages();
 ?>
 
@@ -203,6 +205,7 @@ renderFlashMessages();
           <td>
             <div style="display:flex;gap:.3rem;">
               <a href="<?= APP_URL ?>/modules/revenue/receipt.php?ref=<?= urlencode($pay['receipt_number']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">Receipt</a>
+              <a href="<?= APP_URL ?>/modules/revenue/receipt_pdf.php?ref=<?= urlencode($pay['receipt_number']) ?>" target="_blank" class="btn btn-sm btn-outline-secondary" title="Download PDF">⬇</a>
               <?php if ($pay['status'] === 'active' && hasRole(['admin','finance_officer','town_clerk'])): ?>
               <button class="btn btn-sm btn-outline-secondary" onclick="voidPayment(<?= $pay['id'] ?>, '<?= htmlspecialchars($pay['receipt_number']) ?>')">Void</button>
               <?php endif; ?>

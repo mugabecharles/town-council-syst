@@ -180,6 +180,7 @@ renderFlashMessages();
     <button class="tab-link <?= $activeTab==='fy'?'active':'' ?>"        data-tab="fyTab">Financial Years</button>
     <button class="tab-link <?= $activeTab==='revsrc'?'active':'' ?>"    data-tab="revsrcTab">Revenue Sources</button>
     <button class="tab-link <?= $activeTab==='fundsrc'?'active':'' ?>"   data-tab="fundsrcTab">Funding Sources</button>
+    <button class="tab-link <?= $activeTab==='email'?'active':'' ?>"     data-tab="emailTab">✉ Email / SMTP</button>
   </div>
 </div>
 
@@ -637,6 +638,101 @@ renderFlashMessages();
   </div>
 </div>
 
+<!-- ══ EMAIL / SMTP TAB ════════════════════════════════════════════ -->
+<div id="emailTab" class="tab-panel <?= $activeTab==='email'?'active':'' ?>">
+  <div class="grid-2" style="align-items:start;">
+
+    <div class="card">
+      <div class="card-header"><h5><span class="ch-icon">✉</span> SMTP Email Configuration</h5></div>
+      <div class="card-body">
+        <form method="POST">
+          <?= csrfField() ?>
+          <input type="hidden" name="action" value="save_settings">
+          <input type="hidden" name="active_tab" value="email">
+
+          <?php
+          $emailSettings = $grouped['email'] ?? [];
+          foreach ($emailSettings as $s):
+            $isPass = str_contains($s['setting_key'],'pass');
+          ?>
+          <div class="form-group">
+            <label class="form-label"><?= htmlspecialchars(ucwords(str_replace('_',' ',$s['setting_key']))) ?></label>
+            <?php if ($s['setting_key'] === 'email_enabled'): ?>
+            <select name="settings[<?= $s['setting_key'] ?>]" class="form-select">
+              <option value="0" <?= ($s['setting_value']??'0')==='0'?'selected':'' ?>>Disabled</option>
+              <option value="1" <?= ($s['setting_value']??'0')==='1'?'selected':'' ?>>Enabled</option>
+            </select>
+            <?php else: ?>
+            <input type="<?= $isPass?'password':'text' ?>" name="settings[<?= $s['setting_key'] ?>]"
+                   class="form-control"
+                   value="<?= $isPass?'':htmlspecialchars($s['setting_value']??'') ?>"
+                   placeholder="<?= $isPass?'(leave blank to keep)':'' ?>">
+            <?php endif; ?>
+            <?php if ($s['description']): ?><div class="form-text"><?= htmlspecialchars($s['description']) ?></div><?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+
+          <button type="submit" class="btn btn-primary">Save Email Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h5><span class="ch-icon">◎</span> Setup Guide</h5></div>
+      <div class="card-body">
+        <p class="fs-sm" style="margin-bottom:1rem;">Configure SMTP to enable automatic email notifications for voucher approvals, requisitions, and alerts.</p>
+
+        <div style="background:#f8f9fa;border-radius:8px;padding:1rem;margin-bottom:1rem;">
+          <div class="fw-700 fs-sm" style="margin-bottom:.5rem;">Gmail Setup</div>
+          <div class="fs-sm text-muted" style="line-height:1.8;">
+            1. Enable 2-Factor Authentication on your Gmail account<br>
+            2. Go to Google Account → Security → App Passwords<br>
+            3. Create an App Password for "Mail"<br>
+            4. Use that App Password as <code>smtp_pass</code><br><br>
+            <strong>Settings:</strong><br>
+            Host: <code>smtp.gmail.com</code><br>
+            Port: <code>587</code><br>
+            User: <code>your@gmail.com</code>
+          </div>
+        </div>
+
+        <div style="background:#f8f9fa;border-radius:8px;padding:1rem;margin-bottom:1rem;">
+          <div class="fw-700 fs-sm" style="margin-bottom:.5rem;">Other Providers</div>
+          <div class="fs-sm text-muted" style="line-height:1.8;">
+            <strong>Outlook/Hotmail:</strong> smtp-mail.outlook.com : 587<br>
+            <strong>Yahoo:</strong> smtp.mail.yahoo.com : 587<br>
+            <strong>SendGrid:</strong> smtp.sendgrid.net : 587<br>
+            <strong>Mailgun:</strong> smtp.mailgun.org : 587
+          </div>
+        </div>
+
+        <div class="alert alert-info" style="margin:0;">
+          <span>ℹ</span>
+          <span>When <strong>Email Enabled = Disabled</strong>, the system still logs all emails in the queue table — they just won't be sent. Enable when SMTP is configured.</span>
+        </div>
+
+        <?php
+        // Show queue stats
+        try {
+            $qStats = $db->query("SELECT status, COUNT(*) cnt FROM email_queue GROUP BY status")->fetchAll();
+            if ($qStats):
+        ?>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <div class="fw-700 fs-sm mb-1">Email Queue Status</div>
+          <?php foreach ($qStats as $q): ?>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.2rem 0;">
+            <span><?= ucfirst($q['status']) ?></span>
+            <span class="fw-700"><?= $q['cnt'] ?></span>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; } catch (Exception $e) {} ?>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <?php renderPageEnd(); echo '</div></div>'; ?>
 <script>
 function editSource(s) {
@@ -656,7 +752,8 @@ document.addEventListener('DOMContentLoaded', function () {
     'wards':    'wardsTab',
     'fy':       'fyTab',
     'revsrc':   'revsrcTab',
-    'fundsrc':  'fundsrcTab'
+    'fundsrc':  'fundsrcTab',
+    'email':    'emailTab'
   };
   const param = new URLSearchParams(window.location.search).get('tab');
   if (param && tabMap[param]) {

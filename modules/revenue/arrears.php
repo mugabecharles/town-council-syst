@@ -47,7 +47,14 @@ renderPageStart('Arrears & Defaulters','', [
     ['url'=>APP_URL.'/modules/revenue/dashboard.php','label'=>'Revenue'],
     ['url'=>'#','label'=>'Arrears']
 ]);
-renderPageActions('<a href="'.APP_URL.'/modules/reports/revenue.php?report=arrears&fy='.$fy.'" class="btn btn-outline-secondary">Export Report</a>');
+renderPageActions('
+  <a href="' . APP_URL . '/modules/revenue/demand_notice.php?fy=' . urlencode($fy) . ($wardFil?"&ward_id=$wardFil":"") . ($srcFil?"&source_id=$srcFil":"") . '"
+     class="btn btn-danger no-print">📋 Generate Demand Notices</a>
+  <a href="' . APP_URL . '/api/export.php?type=revenue_arrears&fy=' . urlencode($fy) . ($wardFil?"&ward_id=$wardFil":"") . ($srcFil?"&source_id=$srcFil":"") . '"
+     class="btn btn-outline-primary no-print">📊 Export Excel</a>
+  <a href="' . APP_URL . '/api/export.php?type=revenue_arrears&fy=' . urlencode($fy) . '&format=csv' . '"
+     class="btn btn-outline-secondary no-print">📄 CSV</a>
+');
 renderFlashMessages();
 ?>
 

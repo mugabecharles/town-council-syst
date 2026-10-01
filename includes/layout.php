@@ -25,6 +25,7 @@ function getSidebarNav(array $user): array {
         $nav[] = ['label' => 'Assessments',          'href' => 'modules/revenue/assessments.php',  'icon' => '◆', 'module' => 'assessments'];
         $nav[] = ['label' => 'Payments & Receipts',  'href' => 'modules/revenue/payments.php',     'icon' => '◇', 'module' => 'payments'];
         $nav[] = ['label' => 'Arrears & Defaulters', 'href' => 'modules/revenue/arrears.php',      'icon' => '▲', 'module' => 'arrears'];
+        $nav[] = ['label' => 'Demand Notices',       'href' => 'modules/revenue/demand_notice.php', 'icon' => '◆', 'module' => 'demand_notice'];
     }
 
     // Finance & Budget

@@ -42,7 +42,14 @@ renderPageStart('Finance Reports','', [
     ['url'=>APP_URL.'/dashboard.php','label'=>'Dashboard'],
     ['url'=>'#','label'=>'Finance Reports']
 ]);
-renderPageActions('<button class="btn btn-outline-secondary no-print" data-print>🖨 Print</button>');
+renderPageActions('
+  <button class="btn btn-outline-secondary no-print" data-print>🖨 Print</button>
+  <div class="no-print" style="display:flex;gap:.5rem;">
+    <a href="' . APP_URL . '/api/export.php?type=vouchers&fy=' . urlencode($fy) . '" class="btn btn-primary">📊 Vouchers Excel</a>
+    <a href="' . APP_URL . '/api/export.php?type=dept_expenditure&fy=' . urlencode($fy) . '" class="btn btn-outline-primary">📊 Dept Expenditure</a>
+    <a href="' . APP_URL . '/api/export.php?type=govt_funds&fy=' . urlencode($fy) . '" class="btn btn-outline-secondary">📊 Govt Funds</a>
+  </div>
+');
 renderFlashMessages();
 ?>
 
