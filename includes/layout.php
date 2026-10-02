@@ -67,6 +67,8 @@ function getSidebarNav(array $user): array {
     $nav[] = ['label' => 'Revenue Reports',    'href' => 'modules/reports/revenue.php',   'icon' => '▨', 'module' => 'reports'];
     $nav[] = ['label' => 'Finance Reports',    'href' => 'modules/reports/finance.php',   'icon' => '▩', 'module' => 'reports'];
     $nav[] = ['label' => 'Cash Flow & Intel',  'href' => 'modules/reports/cashflow.php',  'icon' => '◈', 'module' => 'cashflow'];
+    $nav[] = ['label' => 'KPI Dashboard',      'href' => 'modules/reports/kpi.php',       'icon' => '📊', 'module' => 'kpi'];
+    $nav[] = ['label' => 'Global Search',      'href' => 'modules/admin/search.php',      'icon' => '🔍', 'module' => 'search'];
     if (in_array($role, ['admin','town_clerk','auditor'])) {
         $nav[] = ['label' => 'Audit Reports',  'href' => 'modules/reports/audit.php',     'icon' => '◫', 'module' => 'reports'];
     }
@@ -77,8 +79,13 @@ function getSidebarNav(array $user): array {
         $nav[] = ['label' => 'Users & Roles',     'href' => 'modules/admin/users.php',          'icon' => '◭', 'module' => 'users'];
         $nav[] = ['label' => 'Payroll',            'href' => 'modules/admin/payroll.php',         'icon' => '◎', 'module' => 'payroll'];
         $nav[] = ['label' => 'Council Meetings',   'href' => 'modules/admin/meetings.php',        'icon' => '◆', 'module' => 'meetings'];
+        $nav[] = ['label' => 'Year-End Closing',   'href' => 'modules/admin/yearend.php',         'icon' => '📅', 'module' => 'yearend'];
+        $nav[] = ['label' => 'Session Management', 'href' => 'modules/admin/sessions.php',        'icon' => '🔒', 'module' => 'sessions'];
         $nav[] = ['label' => 'Audit Trail',        'href' => 'modules/audit/index.php',           'icon' => '◮', 'module' => 'audit'];
         $nav[] = ['label' => 'System Settings',    'href' => 'modules/admin/settings.php',        'icon' => '◬', 'module' => 'settings'];
+    }
+    if (hasRole(['admin'])) {
+        $nav[] = ['label' => 'System Health',      'href' => 'modules/admin/health.php',          'icon' => '◈', 'module' => 'health'];
     }
 
     return $nav;
@@ -154,7 +161,7 @@ HTML;
     <a href="{$base}/modules/auth/logout.php">⏻ Sign Out</a>
   </div>
 </aside>
-<div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;" onclick="document.getElementById('sidebar').classList.remove('open');this.style.display='none';"></div>
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="document.getElementById('sidebar').classList.remove('open');this.classList.remove('active');document.body.style.overflow='';"></div>
 HTML;
 }
 
@@ -182,6 +189,16 @@ function renderTopbar(string $title, string $subtitle = ''): void {
     </div>
   </div>
   <div class="topbar-right">
+    <!-- Global search bar -->
+    <form action="{$base}/modules/admin/search.php" method="GET"
+          style="display:flex;align-items:center;background:#f4f6f9;border:1px solid var(--border);border-radius:6px;padding:0 .6rem;gap:.4rem;height:34px;">
+      <span style="color:var(--text-muted);font-size:.8rem;">🔍</span>
+      <input type="text" name="q" id="globalSearch" placeholder="Search... (Ctrl+K)"
+             autocomplete="off"
+             style="border:none;background:transparent;outline:none;font-size:.82rem;color:var(--text-main);width:180px;font-family:inherit;"
+             onfocus="this.style.width='260px'" onblur="this.style.width='180px'"
+             style="transition:width .2s;">
+    </form>
     <div style="position:relative;">
       <button class="topbar-btn" id="notifBtn" aria-label="Notifications" onclick="document.getElementById('notifDrop').classList.toggle('show')">
         🔔{$dotHtml}

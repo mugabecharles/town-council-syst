@@ -735,3 +735,180 @@ textarea.form-control { min-height: 90px; resize: vertical; }
   .receipt-paper { padding: 1.2rem; }
   .filter-row { flex-direction: column; }
 }
+
+/* ================================================================
+   GROUP 6: Navigation polish, mobile improvements, print refinements
+   ================================================================ */
+
+/* ── Sidebar overlay for mobile ─────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 999;
+  cursor: pointer;
+}
+.sidebar-overlay.active { display: block; }
+
+/* ── Sidebar mobile open state ───────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); box-shadow: none; }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.3); }
+  .main-content { margin-left: 0 !important; }
+  .topbar { padding: 0 .8rem; }
+}
+
+/* ── Active nav highlight improvement ───────────────────────────── */
+.nav-item-link.active::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 2px 0 0 2px;
+}
+
+/* ── Topbar search bar responsive ────────────────────────────────── */
+.topbar-search {
+  display: flex;
+  align-items: center;
+  background: #f4f6f9;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 .6rem;
+  gap: .4rem;
+  height: 34px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.topbar-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,58,92,.08);
+}
+.topbar-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: .82rem;
+  color: var(--text-main);
+  width: 180px;
+  font-family: inherit;
+  transition: width .25s;
+}
+.topbar-search input:focus { width: 240px; }
+@media (max-width: 768px) {
+  .topbar-search { display: none; }
+}
+
+/* ── Card hover states ───────────────────────────────────────────── */
+.card { transition: box-shadow .18s; }
+
+/* ── Table row actions always visible ────────────────────────────── */
+.tcms-table tbody tr:hover .btn { opacity: 1; }
+
+/* ── Badge improvements ──────────────────────────────────────────── */
+.badge { white-space: nowrap; }
+
+/* ── Alert improvements ──────────────────────────────────────────── */
+.alert { animation: slideInDown .25s ease; }
+@keyframes slideInDown {
+  from { opacity:0; transform: translateY(-8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── Modal improvements ──────────────────────────────────────────── */
+.modal-backdrop.show { animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.modal-box { animation: slideUp .2s ease; }
+@keyframes slideUp {
+  from { opacity:0; transform: translateY(20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── Scrollbar styling ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+
+/* ── Tab panel transitions ───────────────────────────────────────── */
+.tab-panel.active { animation: fadeInPanel .2s ease; }
+@keyframes fadeInPanel { from { opacity:0; } to { opacity:1; } }
+
+/* ── KPI stat card number animation ──────────────────────────────── */
+.stat-info .value { transition: color .3s; }
+
+/* ── Print: comprehensive ────────────────────────────────────────── */
+@media print {
+  .sidebar,
+  .topbar,
+  .page-actions,
+  .no-print,
+  .tab-nav,
+  .filter-row,
+  .modal-backdrop,
+  .alert-close,
+  #alertContainer,
+  .sidebar-overlay { display: none !important; }
+
+  .main-content { margin-left: 0 !important; }
+  .page-content { padding: 0 !important; }
+  body { background: #fff !important; font-size: 11pt; }
+  .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .tcms-table thead th { background: #1a3a5c !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .stat-card { border: 1px solid #ddd !important; box-shadow: none !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  .chart-container { page-break-inside: avoid; }
+  .grid-5, .grid-4, .grid-3, .grid-2 { display: grid !important; }
+  .badge { border: 1px solid #ccc; }
+  .progress-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1 { font-size: 16pt !important; }
+  .page-header h1 { margin-bottom: 4pt; }
+
+  /* Print header on every page */
+  .print-header { display: block !important; }
+}
+.print-header { display: none; }
+
+/* ── Focus styles (accessibility) ───────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Loading spinner ─────────────────────────────────────────────── */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Breadcrumb separator fix ────────────────────────────────────── */
+.breadcrumb a::after { content: ' ›'; margin-left: 3px; }
+.breadcrumb a:last-of-type::after { content: ''; }
+
+/* ── Skip to content (accessibility) ────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 10px;
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 0 0 6px 6px;
+  font-size: .85rem;
+  z-index: 9999;
+  transition: top .2s;
+}
+.skip-link:focus { top: 0; }

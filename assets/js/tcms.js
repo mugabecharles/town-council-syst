@@ -14,13 +14,15 @@ document.addEventListener('DOMContentLoaded', function () {
   if (menuToggle && sidebar) {
     menuToggle.addEventListener('click', () => {
       sidebar.classList.toggle('open');
-      if (overlay) overlay.classList.toggle('show');
+      if (overlay) overlay.classList.toggle('active');
+      document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
     });
   }
   if (overlay) {
     overlay.addEventListener('click', () => {
       sidebar.classList.remove('open');
-      overlay.classList.remove('show');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
     });
   }
 
