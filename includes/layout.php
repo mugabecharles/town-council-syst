@@ -27,6 +27,8 @@ function getSidebarNav(array $user): array {
         $nav[] = ['label' => 'Arrears & Defaulters', 'href' => 'modules/revenue/arrears.php',      'icon' => '▲', 'module' => 'arrears'];
         $nav[] = ['label' => 'Demand Notices',       'href' => 'modules/revenue/demand_notice.php', 'icon' => '◆', 'module' => 'demand_notice'];
         $nav[] = ['label' => 'Bulk Import',           'href' => 'modules/revenue/bulk_import.php',   'icon' => '◑', 'module' => 'bulk_import'];
+        $nav[] = ['label' => 'Reminders',             'href' => 'modules/revenue/reminders.php',     'icon' => '📣', 'module' => 'reminders'];
+        $nav[] = ['label' => 'Revenue Targets',       'href' => 'modules/revenue/targets.php',       'icon' => '🎯', 'module' => 'targets'];
     }
 
     // Finance & Budget
@@ -55,6 +57,7 @@ function getSidebarNav(array $user): array {
         $nav[] = ['section' => 'Projects'];
         $nav[] = ['label' => 'Projects',          'href' => 'modules/projects/index.php',        'icon' => '◐', 'module' => 'projects'];
         $nav[] = ['label' => 'Procurement',       'href' => 'modules/procurement/index.php',     'icon' => '◑', 'module' => 'procurement'];
+        $nav[] = ['label' => 'Suppliers',         'href' => 'modules/procurement/suppliers.php', 'icon' => '◎', 'module' => 'suppliers'];
         $nav[] = ['label' => 'Assets Register',   'href' => 'modules/assets_mgmt/index.php',     'icon' => '◒', 'module' => 'assets'];
     }
 
@@ -68,6 +71,7 @@ function getSidebarNav(array $user): array {
     $nav[] = ['label' => 'Finance Reports',    'href' => 'modules/reports/finance.php',   'icon' => '▩', 'module' => 'reports'];
     $nav[] = ['label' => 'Cash Flow & Intel',  'href' => 'modules/reports/cashflow.php',  'icon' => '◈', 'module' => 'cashflow'];
     $nav[] = ['label' => 'KPI Dashboard',      'href' => 'modules/reports/kpi.php',       'icon' => '📊', 'module' => 'kpi'];
+    $nav[] = ['label' => 'Annual Report',      'href' => 'modules/reports/annual.php',    'icon' => '📑', 'module' => 'annual'];
     $nav[] = ['label' => 'Global Search',      'href' => 'modules/admin/search.php',      'icon' => '🔍', 'module' => 'search'];
     if (in_array($role, ['admin','town_clerk','auditor'])) {
         $nav[] = ['label' => 'Audit Reports',  'href' => 'modules/reports/audit.php',     'icon' => '◫', 'module' => 'reports'];

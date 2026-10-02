@@ -229,7 +229,9 @@ renderPageStart('Payment Voucher ' . $v['voucher_number'], '', [
     ['url' => APP_URL . '/modules/expenditure/vouchers.php','label' => 'Vouchers'],
     ['url' => '#',                                          'label' => $v['voucher_number']],
 ]);
+$vId = $v['id'];
 renderPageActions('<button class="btn btn-primary no-print" data-print>🖨 Print</button>
+  <a href="voucher_pdf.php?id='.$vId.'" target="_blank" class="btn btn-outline-primary no-print">📄 PDF Voucher</a>
   <a href="vouchers.php" class="btn btn-outline-secondary no-print">← Back</a>');
 renderFlashMessages();
 ?>
