@@ -75,8 +75,10 @@ function getSidebarNav(array $user): array {
     if (in_array($role, ['admin','town_clerk'])) {
         $nav[] = ['section' => 'Administration'];
         $nav[] = ['label' => 'Users & Roles',     'href' => 'modules/admin/users.php',          'icon' => '◭', 'module' => 'users'];
-        $nav[] = ['label' => 'Audit Trail',       'href' => 'modules/audit/index.php',           'icon' => '◮', 'module' => 'audit'];
-        $nav[] = ['label' => 'System Settings',   'href' => 'modules/admin/settings.php',        'icon' => '◬', 'module' => 'settings'];
+        $nav[] = ['label' => 'Payroll',            'href' => 'modules/admin/payroll.php',         'icon' => '◎', 'module' => 'payroll'];
+        $nav[] = ['label' => 'Council Meetings',   'href' => 'modules/admin/meetings.php',        'icon' => '◆', 'module' => 'meetings'];
+        $nav[] = ['label' => 'Audit Trail',        'href' => 'modules/audit/index.php',           'icon' => '◮', 'module' => 'audit'];
+        $nav[] = ['label' => 'System Settings',    'href' => 'modules/admin/settings.php',        'icon' => '◬', 'module' => 'settings'];
     }
 
     return $nav;

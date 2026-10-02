@@ -202,7 +202,39 @@ switch ($type) {
         break;
     }
 
-    /* ── Payers Registry ─────────────────────────────────────────── */
+    /* ── Assets Register ─────────────────────────────────────────── */
+    case 'assets': {
+        $rows = $db->query("SELECT a.asset_number, a.name, ac.name AS category,
+            d.name AS department, a.location, a.serial_number, a.purchase_date,
+            a.purchase_value, a.current_value,
+            (a.purchase_value - a.current_value) AS depreciation,
+            a.useful_life_years, a.depreciation_method, a.condition_rating, a.status
+            FROM assets a
+            LEFT JOIN asset_categories ac ON a.category_id=ac.id
+            LEFT JOIN departments d ON a.department_id=d.id
+            ORDER BY ac.name, a.name");
+        $data = $rows->fetchAll();
+        $xl->addSheet('Asset Register')
+           ->setHeaders(['Asset No','Name','Category','Department','Location','Serial No',
+                         'Purchase Date','Purchase Value','Book Value','Depreciation',
+                         'Useful Life (yrs)','Method','Condition','Status'])
+           ->setColStyles(['text','text','text','text','text','text','text',
+                           'currency','currency','currency','number','text','text','text']);
+        foreach ($data as $r) {
+            $xl->addRow([$r['asset_number'],$r['name'],$r['category']??'',$r['department']??'',
+                         $r['location']??'',$r['serial_number']??'',$r['purchase_date']??'',
+                         $r['purchase_value'],$r['current_value'],$r['depreciation'],
+                         $r['useful_life_years'],$r['depreciation_method']??'',$r['condition_rating']??'',$r['status']]);
+        }
+        $xl->addSummaryRow(['','','','','','','TOTAL',
+            array_sum(array_column($data,'purchase_value')),
+            array_sum(array_column($data,'current_value')),
+            array_sum(array_column($data,'depreciation')),'','','','']);
+        $filename = 'asset-register-'.date('Ymd');
+        break;
+    }
+
+    /* ── Payer Registry ─────────────────────────────────────────── */
     case 'payers': {
         $rows = $db->query("SELECT p.payer_number, p.payer_type, p.full_name, p.business_name,
             p.phone, p.email, w.name AS ward, par.name AS parish, v.name AS village,
