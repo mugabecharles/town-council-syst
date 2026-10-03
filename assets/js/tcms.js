@@ -133,8 +133,14 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      const s = document.getElementById('globalSearch');
-      if (s) s.focus();
+      var s = document.getElementById('globalSearch');
+      if (s) { s.focus(); s.select(); }
+    }
+    // Escape closes modals
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.show').forEach(function(m) {
+        m.classList.remove('show');
+      });
     }
   });
 

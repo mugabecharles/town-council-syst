@@ -195,13 +195,12 @@ function renderTopbar(string $title, string $subtitle = ''): void {
   <div class="topbar-right">
     <!-- Global search bar -->
     <form action="{$base}/modules/admin/search.php" method="GET"
-          style="display:flex;align-items:center;background:#f4f6f9;border:1px solid var(--border);border-radius:6px;padding:0 .6rem;gap:.4rem;height:34px;">
-      <span style="color:var(--text-muted);font-size:.8rem;">🔍</span>
+          style="display:flex;align-items:center;background:#f4f6f9;border:1px solid var(--border);border-radius:6px;padding:0 .6rem;gap:.4rem;height:34px;min-width:0;flex-shrink:1;">
+      <span style="color:var(--text-muted);font-size:.8rem;flex-shrink:0;">🔍</span>
       <input type="text" name="q" id="globalSearch" placeholder="Search... (Ctrl+K)"
              autocomplete="off"
-             style="border:none;background:transparent;outline:none;font-size:.82rem;color:var(--text-main);width:180px;font-family:inherit;"
-             onfocus="this.style.width='260px'" onblur="this.style.width='180px'"
-             style="transition:width .2s;">
+             style="border:none;background:transparent;outline:none;font-size:.82rem;color:var(--text-main);width:140px;min-width:60px;font-family:inherit;transition:width .25s;"
+             onfocus="this.style.width='220px'" onblur="this.style.width='140px'">
     </form>
     <div style="position:relative;">
       <button class="topbar-btn" id="notifBtn" aria-label="Notifications" onclick="document.getElementById('notifDrop').classList.toggle('show')">
@@ -237,19 +236,18 @@ function renderPageStart(string $title, string $subtitle = '', array $breadcrumb
             $bcHtml .= '</div>';
         }
         echo <<<HTML
-<div class="page-header">
+<div class="page-header" id="pageHeader">
   <div>
     <h1>{$title}</h1>
     {$bcHtml}
   </div>
 HTML;
-        // actions div is left open — caller should close with renderPageActions()
     }
 }
 
 function renderPageActions(string $html = ''): void {
     if ($html) {
-        echo "<div class=\"page-actions\">{$html}</div>";
+        echo "<div class=\"page-actions\" id=\"pageActions\">{$html}</div>";
     }
     echo "</div>\n"; // close page-header
 }

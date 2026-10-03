@@ -264,13 +264,18 @@ img { max-width: 100%; }
   top: 0;
   z-index: 900;
   box-shadow: var(--shadow-sm);
-  gap: 1rem;
+  gap: .8rem;
+  min-width: 0;
+  overflow: visible;
 }
-.topbar-left { display: flex; align-items: center; gap: 1rem; flex: 1; }
+.topbar-left { display: flex; align-items: center; gap: .8rem; flex: 1; min-width: 0; overflow: hidden; }
 .topbar-title {
-  font-size: 1rem;
+  font-size: .95rem;
   font-weight: 700;
   color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .topbar-subtitle {
   font-size: .78rem;
@@ -279,7 +284,8 @@ img { max-width: 100%; }
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: .8rem;
+  gap: .6rem;
+  flex-shrink: 0;
 }
 .topbar-btn {
   width: 36px;
@@ -308,7 +314,8 @@ img { max-width: 100%; }
 .menu-toggle:hover { color: var(--primary); }
 
 /* ── Page Content ── */
-.page-content { padding: 1.5rem; flex: 1; }
+.page-content { padding: 1.5rem; flex: 1; min-width: 0; }
+
 .page-header {
   margin-bottom: 1.5rem;
   display: flex;
@@ -316,12 +323,14 @@ img { max-width: 100%; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: .8rem;
+  min-width: 0;
 }
 .page-header h1 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--primary);
   line-height: 1.2;
+  word-break: break-word;
 }
 .page-header .breadcrumb {
   font-size: .78rem;
@@ -331,7 +340,13 @@ img { max-width: 100%; }
 .page-header .breadcrumb a { color: var(--text-muted); }
 .page-header .breadcrumb a:hover { color: var(--primary); }
 .page-header .breadcrumb span { color: var(--primary); font-weight: 600; }
-.page-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
 
 /* ── Cards ── */
 .card {
@@ -912,3 +927,123 @@ a:focus-visible {
   transition: top .2s;
 }
 .skip-link:focus { top: 0; }
+
+/* ================================================================
+   RESPONSIVE FIXES — Zoom-out & small viewport button visibility
+   ================================================================ */
+
+/* ── Main content must never overflow its container ─────────────── */
+.main-content { min-width: 0; overflow-x: hidden; }
+.page-content { min-width: 0; }
+
+/* ── Page header: always wraps cleanly ───────────────────────────── */
+.page-header {
+  align-items: flex-start !important;
+  row-gap: .6rem;
+}
+.page-header > div:first-child { min-width: 0; flex: 1 1 200px; }
+.page-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  row-gap: .4rem;
+}
+
+/* ── Buttons: never clip or disappear ────────────────────────────── */
+.btn { white-space: nowrap; flex-shrink: 0; }
+.page-actions .btn { font-size: .8rem; padding: .38rem .8rem; }
+.page-actions .form-select { font-size: .8rem; padding: .38rem .7rem; height: 32px; }
+
+/* ── Filter row: wraps properly ──────────────────────────────────── */
+.filter-row { flex-wrap: wrap; }
+.filter-row .form-group { flex: 1 1 160px; min-width: 130px; }
+
+/* ── Topbar: search collapses on small widths ────────────────────── */
+@media (max-width: 1100px) {
+  .topbar-right form input#globalSearch { width: 100px; }
+  .topbar-right form input#globalSearch:focus { width: 170px; }
+}
+@media (max-width: 900px) {
+  .topbar-right form { display: none; } /* hide search on very narrow */
+  .page-content { padding: 1rem; }
+}
+@media (max-width: 768px) {
+  .page-content { padding: .8rem; }
+  .page-header h1 { font-size: 1.05rem; }
+  .page-actions .btn { font-size: .78rem; padding: .32rem .7rem; }
+  .grid-5 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 540px) {
+  .page-header { flex-direction: column; }
+  .page-actions { width: 100%; justify-content: flex-start; }
+  .grid-5, .grid-4, .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .topbar { padding: 0 .7rem; gap: .4rem; }
+}
+
+/* ── Stat cards: don't truncate values ───────────────────────────── */
+.stat-info .value { white-space: nowrap; font-size: clamp(.9rem, 2vw, 1.4rem); }
+.stat-info .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .72rem; }
+
+/* ── Tables: horizontal scroll with visible scrollbar ───────────── */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+}
+.table-wrapper::-webkit-scrollbar { height: 5px; }
+.table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+
+/* ── Cards in grid: min-width so they don't go too narrow ─────────── */
+.card { min-width: 0; }
+
+/* ── Modal: full-width on small screens ─────────────────────────── */
+@media (max-width: 600px) {
+  .modal-box { margin: .5rem; width: calc(100% - 1rem); max-width: 100%; }
+  .modal-box.modal-lg { max-width: calc(100% - 1rem); }
+  .modal-body { padding: 1rem; }
+  .modal-footer { padding: .7rem 1rem; }
+  .grid-2.modal-body, .modal-body .grid-2 { grid-template-columns: 1fr !important; }
+}
+
+/* ── Tab navigation: horizontal scroll on narrow screens ──────────── */
+.tab-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+.tab-nav::-webkit-scrollbar { height: 3px; }
+.tab-link { white-space: nowrap; }
+
+/* ── Receipt paper: full width on mobile ────────────────────────── */
+@media (max-width: 600px) {
+  .receipt-paper { padding: 1rem; }
+  .receipt-footer { flex-direction: column; gap: 1.5rem; }
+}
+
+/* ── Sidebar nav: hide section labels on very narrow sidebar ──────── */
+@media (max-width: 220px) {
+  .nav-section-label { display: none; }
+}
+
+/* ── Fix: approval timeline on mobile ───────────────────────────── */
+@media (max-width: 540px) {
+  .approval-timeline { padding-left: 1.6rem; }
+  .timeline-dot { left: -1.65rem; width: 20px; height: 20px; font-size: .65rem; }
+}
+
+/* ── Fix: stat cards min-height for small grids ────────────────── */
+.stat-card { min-height: 72px; }
+
+/* ── Zoom-out specific: when browser zoom < 80% ─────────────────── */
+@media (max-width: 1400px) {
+  :root { --sidebar-w: 240px; }
+}
+@media (max-width: 1200px) {
+  :root { --sidebar-w: 220px; }
+  .nav-item-link { font-size: .8rem; padding: .55rem 1rem; }
+  .nav-section-label { font-size: .64rem; }
+  .page-content { padding: 1.2rem; }
+}
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+  .brand-text h2 { font-size: .8rem; }
+  .brand-emblem { width: 36px; height: 36px; font-size: .9rem; }
+  .page-actions .btn { font-size: .78rem; }
+}
